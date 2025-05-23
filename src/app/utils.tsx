@@ -73,6 +73,7 @@ export function getUrls() {
         DATA_LOADER_INGEST_DATA_FROM_QUERY: `/api/tables/data-loader/ingest-data-from-query`,
 
         QUERY_COMPLETION: `/api/agent/query-completion`,
+        AUTO_DASHBOARD_URL: `/api/agent/auto_dashboard`,
     };
 }
 

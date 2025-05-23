@@ -73,6 +73,16 @@ export interface DataFormulatorState {
     }   
 
     dataLoaderConnectParams: Record<string, Record<string, string>>; // {table_name: {param_name: param_value}}
+
+    // Auto Dashboard State
+    autoDashboardSuggestions: any[] | null;
+    autoDashboardQuery: string | null;
+    autoDashboardData: any[] | null; // This is expected to be DictTable['rows']
+    isAutoDashboardLoading: boolean;
+    autoDashboardError: string | null;
+
+    // For tracking the user's current high-level goal, can be set by suggestions
+    currentGoalDescription: string | null; 
 }
 
 // Define the initial state using that type
@@ -112,8 +122,35 @@ const initialState: DataFormulatorState = {
         defaultChartHeight: 300,
     },
 
-    dataLoaderConnectParams: {}
+    dataLoaderConnectParams: {},
+
+    // Auto Dashboard State
+    autoDashboardSuggestions: null,
+    autoDashboardQuery: null,
+    autoDashboardData: null,
+    isAutoDashboardLoading: false,
+    autoDashboardError: null,
+    currentGoalDescription: null,
 }
+
+// Helper function to create a DictTable from rows, inferring names and types.
+// This is a simplified version. A more robust one might exist or be needed.
+const createDictTableFromRows = (id: string, rows: any[]): DictTable => {
+    if (rows.length === 0) {
+        return { id, names: [], types: [], rows: [], anchored: false };
+    }
+    const names = Object.keys(rows[0]);
+    const types = names.map(name => {
+        // Simple type inference, can be expanded
+        const sampleValue = rows[0][name];
+        if (typeof sampleValue === 'number') return Type.Number;
+        if (typeof sampleValue === 'boolean') return Type.Boolean;
+        if (sampleValue instanceof Date) return Type.Date;
+        return Type.String;
+    });
+    return { id, names, types, rows, anchored: false }; // Anchored false for derived tables
+};
+
 
 let getUnrefedDerivedTableIds = (state: DataFormulatorState) => {
 
@@ -253,10 +290,131 @@ export const getSessionId = createAsyncThunk(
     }
 );
 
+export const fetchAutoDashboard = createAsyncThunk(
+    "dataFormulatorSlice/fetchAutoDashboard",
+    async (tableName: string, { getState, rejectWithValue }) => {
+        console.log(`>>> call agent to fetch auto dashboard for table: ${tableName} <<<`)
+
+        const state = getState() as DataFormulatorState;
+        const model = dfSelectors.getActiveModel(state);
+
+        if (!model) {
+            return rejectWithValue("No active model selected.");
+        }
+
+        const message = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', },
+            body: JSON.stringify({
+                token: Date.now(),
+                table_name: tableName,
+                model: model
+            }),
+        };
+
+        // Timeout the request after, e.g., 60 seconds for potentially long dashboard generation
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+        try {
+            const response = await fetch(getUrls().AUTO_DASHBOARD_URL, { ...message, signal: controller.signal });
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                return rejectWithValue(errorData?.message || `HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            if (data.status === "ok" && data.results) {
+                return data.results; // This should contain sql_query, data_content, dashboard_suggestions
+            } else {
+                return rejectWithValue(data?.message || "Failed to fetch auto dashboard suggestions.");
+            }
+        } catch (error: any) {
+            clearTimeout(timeoutId);
+            if (error.name === 'AbortError') {
+                return rejectWithValue('Request timed out.');
+            }
+            return rejectWithValue(error.message || 'An unknown error occurred.');
+        }
+    }
+);
+
 export const dataFormulatorSlice = createSlice({
     name: 'dataFormulatorSlice',
     initialState: initialState,
     reducers: {
+        applyDashboardSuggestionToWorkspace: (state, action: PayloadAction<{ suggestion: any; dashboardDataRows: any[] }>) => {
+            const { suggestion, dashboardDataRows } = action.payload;
+            const newTableId = `auto_dashboard_table_${Date.now()}`;
+
+            // 1. Create new DictTable from dashboardDataRows
+            const newTable = createDictTableFromRows(newTableId, dashboardDataRows);
+            newTable.displayId = `Data for: ${suggestion.recommendation.substring(0,30)}...`; // Set a displayId
+            
+            // Add new table to state, remove if one with same ID exists (though unlikely with timestamp)
+            state.tables = state.tables.filter(t => t.id !== newTableId);
+            state.tables.push(newTable);
+
+            // 2. Update ConceptShelfItems for the new table
+            const newFieldItems = getDataFieldItems(newTable);
+            // A simple strategy: filter out items from any previous "auto_dashboard_table_" and add new ones.
+            // This prevents accumulation if user clicks "Use this chart" multiple times.
+            state.conceptShelfItems = state.conceptShelfItems.filter(item => !item.tableRef?.startsWith("auto_dashboard_table_"));
+            state.conceptShelfItems.push(...newFieldItems);
+            
+            // 3. Update or Create Chart
+            let targetChart: Chart | undefined = state.charts.find(c => c.id === state.focusedChartId);
+
+            if (!targetChart || state.charts.length === 0) {
+                targetChart = generateFreshChart(newTable.id, suggestion.chart_type);
+                state.charts.unshift(targetChart); // Add to the beginning as the new active chart
+            } else {
+                targetChart.chartType = suggestion.chart_type;
+                targetChart.tableRef = newTable.id;
+                // Clear existing encodings
+                targetChart.encodingMap = Object.assign({}, ...getChartChannels(suggestion.chart_type).map((channel) => ({ [channel]: { channel: channel, bin: false } })));
+            }
+            
+            state.focusedChartId = targetChart.id;
+            state.activeThreadChartId = targetChart.id; // Make it the active thread
+
+            // 4. Update EncodingMap for the targetChart
+            const channels = getChartChannels(suggestion.chart_type); // Get appropriate channels for the chart type
+            const visFields = suggestion.visualization_fields || [];
+
+            visFields.forEach((fieldName: string, i: number) => {
+                if (i < channels.length) {
+                    const channelKey = channels[i] as Channel;
+                    const fieldItem = newFieldItems.find(item => item.name === fieldName && item.tableRef === newTableId);
+                    if (fieldItem) {
+                        targetChart!.encodingMap[channelKey] = { ...targetChart!.encodingMap[channelKey], fieldID: fieldItem.id };
+                    } else {
+                        console.warn(`FieldItem for '${fieldName}' not found in new table '${newTableId}' for channel '${channelKey}'.`);
+                    }
+                }
+            });
+            
+            // 5. Set Focused Table
+            state.focusedTableId = newTable.id;
+
+            // 6. Update Goal/Messages
+            state.currentGoalDescription = suggestion.recommendation || `View: ${suggestion.chart_type} of ${visFields.join(', ')}`;
+            state.messages.push({ 
+                severity: "info", 
+                message: `Applied suggested chart to workspace: ${suggestion.recommendation || suggestion.chart_type}`,
+                timestamp: Date.now()
+            });
+            state.displayedMessageIdx = state.messages.length -1;
+
+
+            // 7. Optionally, clear the auto-dashboard suggestions panel after one is chosen
+            // state.autoDashboardSuggestions = null;
+            // state.autoDashboardQuery = null;
+            // state.autoDashboardData = null;
+            // state.isAutoDashboardLoading = false;
+            // state.autoDashboardError = null;
+        },
         resetState: (state, action: PayloadAction<undefined>) => {
             //state.table = undefined;
             
@@ -349,6 +507,13 @@ export const dataFormulatorSlice = createSlice({
             state.focusedTableId = table.id;
             state.focusedChartId = undefined;
             state.activeThreadChartId = undefined;  
+
+            // Clear previous auto dashboard state when a new table is loaded
+            state.autoDashboardSuggestions = null;
+            state.autoDashboardQuery = null;
+            state.autoDashboardData = null;
+            state.isAutoDashboardLoading = false;
+            state.autoDashboardError = null;
         },
         deleteTable: (state, action: PayloadAction<string>) => {
             let tableId = action.payload;
@@ -755,6 +920,13 @@ export const dataFormulatorSlice = createSlice({
         deleteDataLoaderConnectParams: (state, action: PayloadAction<string>) => {
             let dataLoaderType = action.payload;
             delete state.dataLoaderConnectParams[dataLoaderType];
+        },
+        clearAutoDashboardState: (state) => {
+            state.autoDashboardSuggestions = null;
+            state.autoDashboardQuery = null;
+            state.autoDashboardData = null;
+            state.isAutoDashboardLoading = false;
+            state.autoDashboardError = null;
         }
     },
     extraReducers: (builder) => {
@@ -813,6 +985,24 @@ export const dataFormulatorSlice = createSlice({
             console.log("got sessionId ", action.payload.session_id);
             state.sessionId = action.payload.session_id;
         })
+        // Reducers for fetchAutoDashboard
+        .addCase(fetchAutoDashboard.pending, (state) => {
+            state.isAutoDashboardLoading = true;
+            state.autoDashboardError = null;
+            state.autoDashboardSuggestions = null;
+            state.autoDashboardQuery = null;
+            state.autoDashboardData = null;
+        })
+        .addCase(fetchAutoDashboard.fulfilled, (state, action) => {
+            state.isAutoDashboardLoading = false;
+            state.autoDashboardSuggestions = action.payload.dashboard_suggestions;
+            state.autoDashboardQuery = action.payload.sql_query;
+            state.autoDashboardData = action.payload.data_content?.rows; // Assuming data_content has a rows property
+        })
+        .addCase(fetchAutoDashboard.rejected, (state, action) => {
+            state.isAutoDashboardLoading = false;
+            state.autoDashboardError = action.payload as string || "Failed to fetch auto dashboard suggestions.";
+        })
     },
 })
 
@@ -826,7 +1016,13 @@ export const dfSelectors = {
         let focusedTable = tables.find(t => t.id == focusedTableId);
         let sourceTables = focusedTable?.derive?.source || [focusedTable?.id];
         return sourceTables;
-    }
+    },
+    getAutoDashboardSuggestions: (state: DataFormulatorState) => state.autoDashboardSuggestions,
+    getAutoDashboardQuery: (state: DataFormulatorState) => state.autoDashboardQuery,
+    getAutoDashboardData: (state: DataFormulatorState) => state.autoDashboardData,
+    getIsAutoDashboardLoading: (state: DataFormulatorState) => state.isAutoDashboardLoading,
+    getAutoDashboardError: (state: DataFormulatorState) => state.autoDashboardError,
+    getCurrentGoalDescription: (state: DataFormulatorState) => state.currentGoalDescription,
 }
 
 // derived field: extra all field items from the table
@@ -844,3 +1040,8 @@ export const getDataFieldItems = (baseTable: DictTable): FieldItem[] => {
 // Action creators are generated for each case reducer function
 export const dfActions = dataFormulatorSlice.actions;
 export const dataFormulatorReducer = dataFormulatorSlice.reducer;
+
+// Need to add AUTO_DASHBOARD_URL to src/app/utils.ts getUrls()
+// This is a placeholder for where it would be added.
+// For now, the fetch will fail if getUrls().AUTO_DASHBOARD_URL is not defined.
+// I will add this in a subsequent step.

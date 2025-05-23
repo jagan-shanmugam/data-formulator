@@ -16,6 +16,7 @@ import logging
 
 import json
 import html
+import traceback
 
 from data_formulator.agents.agent_concept_derive import ConceptDeriveAgent
 from data_formulator.agents.agent_py_concept_derive import PyConceptDeriveAgent
@@ -195,6 +196,79 @@ def process_data_on_load_request():
 
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
+
+@agent_bp.route('/auto_dashboard', methods=['POST'])
+def auto_dashboard_request():
+    if not request.is_json:
+        return jsonify({"status": "error", "message": "Request must be JSON"}), 400
+
+    content = request.get_json()
+    token = content.get("token", "") # Optional token
+    table_name = content.get("table_name")
+    model_config = content.get("model")
+
+    if not table_name:
+        return jsonify({"status": "error", "message": "Missing 'table_name' in request"}), 400
+    
+    if not model_config:
+        return jsonify({"status": "error", "message": "Missing 'model' configuration in request"}), 400
+
+    client = None
+    conn = None
+    try:
+        client = get_client(model_config)
+        conn = db_manager.get_connection(session.get('session_id', 'default_session')) # Use default if no session
+
+        agent = SQLDataRecAgent(client=client, conn=conn)
+
+        generic_goal_json_string = """
+{
+    "goal": "Analyze the provided dataset. Identify key characteristics, distributions, and potential relationships within the data. Suggest a diverse set of 3-5 distinct visualizations that would provide a good initial overview for a user unfamiliar with this dataset. For each visualization, specify the chart type, the fields to be visualized, and the reasoning for your recommendation."
+}
+"""
+        input_tables = [{"name": table_name, "description": "Dataset for auto dashboard generation"}]
+        
+        logger.info(f"Requesting auto dashboard for table: {table_name} with model: {model_config.get('model')}")
+
+        # The agent.run() method returns a list of candidates
+        candidates = agent.run(input_tables=input_tables, description=generic_goal_json_string)
+
+        if candidates and candidates[0]['status'] == 'ok':
+            candidate = candidates[0]
+            response_data = {
+                "sql_query": candidate.get('code'),
+                "data_content": candidate.get('content'),
+                "dashboard_suggestions": candidate.get('suggested_visualizations', []) # Ensure key exists
+            }
+            return jsonify({"token": token, "status": "ok", "results": response_data})
+        elif candidates:
+            error_detail = candidates[0].get('content', 'Agent returned an error without specific content.')
+            logger.error(f"Agent failed for auto_dashboard: {error_detail}")
+            return jsonify({"token": token, "status": "error", "message": "Agent failed to generate dashboard suggestions.", "detail": error_detail}), 500
+        else:
+            logger.error("Agent returned no candidates for auto_dashboard.")
+            return jsonify({"token": token, "status": "error", "message": "Agent returned no candidates."}), 500
+
+    except Exception as e:
+        logger.error(f"Exception in /auto_dashboard: {str(e)}")
+        logger.error(traceback.format_exc())
+        return jsonify({"token": token, "status": "error", "message": f"An unexpected error occurred: {str(e)}"}), 500
+    finally:
+        if conn:
+            conn.close()
+            logger.info("Database connection closed for /auto_dashboard.")
+
+    # This part should ideally not be reached if logic is correct, but as a fallback:
+    return jsonify({"token": token, "status": "error", "message": "An unknown error occurred in auto_dashboard endpoint."}), 500
+    # The above return should be inside the try or except block.
+    # This line is a placeholder and should not be reached if the logic above is complete.
+    # However, to satisfy the structure, ensure all paths return a Flask response.
+    # Fallback, though ideally not reached:
+    # return jsonify({"status": "error", "message": "Reached end of function unexpectedly"}), 500
+    # Actually, the structure implies the final return is part of the function, not the finally block.
+    # The previous structure was fine. Let's remove the redundant part.
+    # This part should ideally not be reached if logic is correct, but as a fallback:
+    return jsonify({"token": token, "status": "error", "message": "An unknown error occurred in auto_dashboard endpoint."}), 500
 
 
 @agent_bp.route('/derive-concept-request', methods=['GET', 'POST'])

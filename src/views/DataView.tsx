@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 
 import React, { FC, useEffect, useMemo } from 'react';
-
+import { useDispatch, useSelector } from 'react-redux';
 import _ from 'lodash';
 
 import { Typography, Box, Link, Breadcrumbs, useTheme } from '@mui/material';
@@ -14,12 +14,14 @@ import 'ag-grid-community/styles/ag-theme-material.css';
 import '../scss/DataView.scss';
 
 import { DictTable } from '../components/ComponentType';
-import { DataFormulatorState, dfActions } from '../app/dfSlice';
-import { useDispatch, useSelector } from 'react-redux';
+import { DataFormulatorState, dfActions, fetchAutoDashboard } from '../app/dfSlice'; // Import fetchAutoDashboard
+import { AppDispatch } from '../app/store'; // Import AppDispatch for typed dispatch
 import { Type } from '../data/types';
 import { createTableFromFromObjectArray } from '../data/utils';
 import { SelectableGroup } from 'react-selectable-fast';
 import { SelectableDataGrid } from './SelectableDataGrid';
+import DashboardDisplay from './DashboardDisplay'; // Import DashboardDisplay
+import { CircularProgress } from '@mui/material'; // For loading indicator
 
 import ParkIcon from '@mui/icons-material/Park';
 import AnchorIcon from '@mui/icons-material/Anchor';
@@ -37,6 +39,13 @@ export const FreeDataViewFC: FC<FreeDataViewProps> = function DataView({  $table
     
     const conceptShelfItems = useSelector((state: DataFormulatorState) => state.conceptShelfItems);
     const focusedTableId = useSelector((state: DataFormulatorState) => state.focusedTableId);
+
+    // Auto Dashboard selectors
+    const autoDashboardSuggestions = useSelector(dfSelectors.getAutoDashboardSuggestions);
+    const autoDashboardQuery = useSelector(dfSelectors.getAutoDashboardQuery);
+    const autoDashboardData = useSelector(dfSelectors.getAutoDashboardData);
+    const isAutoDashboardLoading = useSelector(dfSelectors.getIsAutoDashboardLoading);
+    const autoDashboardError = useSelector(dfSelectors.getAutoDashboardError);
 
     let derivedFields =  conceptShelfItems.filter(f => f.source == "derived" && f.name != "");
 
@@ -58,7 +67,15 @@ export const FreeDataViewFC: FC<FreeDataViewProps> = function DataView({  $table
         if(focusedTableId == undefined && tables.length > 0) {
             dispatch(dfActions.setFocusedTable(tables[0].id))
         }
-    }, [tables])
+    }, [tables, dispatch]) // Added dispatch to dependency array
+
+    // Effect to fetch auto dashboard when focusedTableId changes
+    useEffect(() => {
+        if (focusedTableId) {
+            // Make sure to use AppDispatch type for thunks
+            (dispatch as AppDispatch)(fetchAutoDashboard(focusedTableId));
+        }
+    }, [focusedTableId, dispatch]); // Added dispatch to dependency array
 
     // given a table render the table
     let renderTableBody = (targetTable: DictTable | undefined) => {
@@ -158,7 +175,37 @@ export const FreeDataViewFC: FC<FreeDataViewProps> = function DataView({  $table
                     {tempTables.map(t => genTableLink(t))}
                 </Breadcrumbs>
             </Box>
-            {renderTableBody(tableToRender.find(t => t.id == focusedTableId))}
+            <Box sx={{ flexGrow: 1, overflowY: 'auto' }}> {/* Make this area scrollable if content exceeds */}
+                {renderTableBody(tableToRender.find(t => t.id == focusedTableId))}
+                
+                {/* Auto Dashboard Section */}
+                <Box sx={{ mt: 2, p: 1, borderTop: '1px solid rgba(0,0,0,0.12)' }}>
+                    <Typography variant="h5" gutterBottom sx={{pl:1}}>Auto-Generated Dashboard</Typography>
+                    {isAutoDashboardLoading && (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+                            <CircularProgress />
+                            <Typography sx={{ ml: 2 }}>Loading dashboard suggestions...</Typography>
+                        </Box>
+                    )}
+                    {autoDashboardError && (
+                        <Typography color="error" sx={{ p: 2 }}>
+                            Error loading dashboard: {autoDashboardError}
+                        </Typography>
+                    )}
+                    {!isAutoDashboardLoading && !autoDashboardError && autoDashboardSuggestions && autoDashboardData && (
+                        <DashboardDisplay
+                            suggestions={autoDashboardSuggestions}
+                            sqlQuery={autoDashboardQuery}
+                            data={autoDashboardData}
+                        />
+                    )}
+                     {!isAutoDashboardLoading && !autoDashboardError && (!autoDashboardSuggestions || autoDashboardSuggestions.length === 0) && (
+                        <Typography sx={{ p: 2, color: 'text.secondary' }}>
+                            No dashboard suggestions available for this table, or data is still loading.
+                        </Typography>
+                    )}
+                </Box>
+            </Box>
         </Box>
     );
 }

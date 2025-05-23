@@ -29,7 +29,10 @@ The [CONTEXT] shows what the current dataset is, and the [GOAL] describes what t
 
 Concretely, you should infer the appropriate data and create a SQL query in the [OUTPUT] section based off the [CONTEXT] and [GOAL] in two steps:
 
-    1. First, based on users' [GOAL]. Create a json object that represents the inferred user intent. The json object should have the following format:
+    1. First, based on users' [GOAL]. Create a json object that represents the inferred user intent.
+       - If the user's [GOAL] is broad (e.g., "provide an overview of the dataset", "explore the data"), you should recommend a list of 3-5 diverse visualizations. The JSON output should contain a key "suggested_visualizations" which holds a list of recommendation objects.
+       - If the user's [GOAL] is specific and asks for a single chart, the "suggested_visualizations" list can contain a single item.
+       - Each recommendation object in the list should have the following format:
 
 ```json
 {
@@ -41,9 +44,9 @@ Concretely, you should infer the appropriate data and create a SQL query in the 
 }
 ```
 
-Concretely:
-    (1) If the user's [GOAL] is clear already, simply infer what the user mean. Set "mode" as "infer" and create "output_fields" and "visualization_fields_list" based off user description.
-    (2) If the user's [GOAL] is not clear, make recommendations to the user:
+Concretely for each recommendation object:
+    (1) If the user's [GOAL] is clear for a specific chart, simply infer what the user means for that chart. Set "mode" as "infer" and create "output_fields" and "visualization_fields_list" based off user description.
+    (2) If the user's [GOAL] is broad or not clear for a specific chart, make recommendations:
         - choose one of "distribution", "overview", "summary" in "mode":
             * if it is "overview" and the data is in wide format, reshape it into long format.
             * if it is "distribution", select a few fields that would be interesting to visualize together.
@@ -55,14 +58,15 @@ Concretely:
     (4) "visualization_fields" should be no more than 3 (for x,y,legend).
     (5) "chart_type" must be one of "point", "bar", "line", or "boxplot"
 
-    2. Then, write a SQL query based on the inferred goal, the query input are tables (or multiple tables presented in the [CONTEXT] section) and the output is the transformed data. The output data should contain all "output_fields" from the refined goal.
+    2. Then, write a SINGLE SQL query based on the inferred goals (all recommendations). The query input are tables (or multiple tables presented in the [CONTEXT] section) and the output is the transformed data. 
+       The output data should contain all "output_fields" from ALL "suggested_visualizations". If different visualizations require vastly different data structures not achievable with a single query, prioritize the most comprehensive query that can serve the majority of visualizations.
 The query should be as simple as possible and easily readable. If there is no data transformation needed based on "output_fields", the transformation function can simply "SELECT * FROM table".
 note:   
      - the sql query should be written in the style of duckdb.
      - if the user provided multiple tables, you should consider the join between tables to derive the output.
 
     3. The [OUTPUT] must only contain two items:
-        - a json object (wrapped in ```json```) representing the refined goal (including "mode", "recommendation", "output_fields", "chart_type", "visualization_fields")
+        - a json object (wrapped in ```json```) representing the refined goal (e.g. {"suggested_visualizations": [...]})
         - a sql query block (wrapped in ```sql```) representing the transformation code, do not add any extra text explanation.
 
 some notes:
@@ -71,7 +75,7 @@ some notes:
 '''
 
 example = """
-For example:
+For example, if the goal is broad:
 
 [CONTEXT]
 
@@ -98,17 +102,112 @@ table_0 (student_exam) sample:
 
 [GOAL]
 
+{"goal": "Give me an overview of student performance."}
+
+[OUTPUT]
+
+```json
+{
+    "suggested_visualizations": [
+        {
+            "mode": "distribution",
+            "recommendation": "Shows the distribution of math scores to understand student performance in this subject.",
+            "output_fields": ["math_score_range", "number_of_students"],
+            "chart_type": "bar",
+            "visualization_fields": ["math_score_range", "number_of_students"]
+        },
+        {
+            "mode": "summary",
+            "recommendation": "Compares average reading scores across different majors.",
+            "output_fields": ["major", "average_reading_score"],
+            "chart_type": "bar",
+            "visualization_fields": ["major", "average_reading_score"]
+        },
+        {
+            "mode": "distribution",
+            "recommendation": "Shows the distribution of writing scores to understand student performance in this subject.",
+            "output_fields": ["writing_score_range", "number_of_students"],
+            "chart_type": "bar",
+            "visualization_fields": ["writing_score_range", "number_of_students"]
+        }
+    ]
+}
+```
+
+```sql
+WITH ScoreRanges AS (
+    SELECT 
+        student,
+        major,
+        math,
+        reading,
+        writing,
+        CASE
+            WHEN math >= 90 THEN '90-100'
+            WHEN math >= 80 THEN '80-89'
+            WHEN math >= 70 THEN '70-79'
+            WHEN math >= 60 THEN '60-69'
+            ELSE 'Below 60'
+        END AS math_score_range,
+        CASE
+            WHEN writing >= 90 THEN '90-100'
+            WHEN writing >= 80 THEN '80-89'
+            WHEN writing >= 70 THEN '70-79'
+            WHEN writing >= 60 THEN '60-69'
+            ELSE 'Below 60'
+        END AS writing_score_range
+    FROM student_exam
+)
+SELECT 
+    sr.math_score_range,
+    COUNT(DISTINCT sr.student) AS number_of_students,
+    srm.major,
+    srm.average_reading_score,
+    srw.writing_score_range,
+    COUNT(DISTINCT srw.student) AS num_students_writing -- Added for completeness, though the example output_fields didn't explicitly require this structure from one query
+FROM ScoreRanges sr
+LEFT JOIN (
+    SELECT major, AVG(reading) AS average_reading_score
+    FROM student_exam
+    GROUP BY major
+) srm ON sr.major = srm.major -- This join might be problematic if math_score_range is the primary grain. A real query might need UNIONs or separate queries for true distinctness.
+                               -- For this example, we assume the LLM will generate a query that makes sense for the visualizations.
+LEFT JOIN ScoreRanges srw ON sr.student = srw.student -- Self join to bring writing scores, example of how complex it can get.
+GROUP BY 
+    sr.math_score_range, srm.major, srm.average_reading_score, srw.writing_score_range;
+-- Note: The SQL query above is a complex example trying to satisfy multiple visualizations. 
+-- In practice, if the visualizations are very different, it might be better to have the LLM generate simpler, more focused queries if it determines a single query is too complex or inefficient.
+-- Or, for the first pass, the output_fields in the JSON should be chosen such that a single SELECT (perhaps with CTEs) can produce them all.
+```
+
+For example, if the goal is specific:
+
+[CONTEXT]
+
+table_0 (student_exam) fields:
+	student -- type: int64, values: 1, 2, 3, ..., 997, 998, 999, 1000
+	major -- type: object, values: liberal arts, science
+	math -- type: int64, values: 0, 8, 18, ..., 97, 98, 99, 100
+	reading -- type: int64, values: 17, 23, 24, ..., 96, 97, 99, 100
+	writing -- type: int64, values: 10, 15, 19, ..., 97, 98, 99, 100
+
+[GOAL]
+
 {"goal": "Rank students based on their average scores"}
 
 [OUTPUT]
 
 ```json
-{  
-    "mode": "infer",  
-    "recommendation": "To rank students based on their average scores, we need to calculate the average score for each student and then rank them accordingly.",  
-    "output_fields": ["student", "major", "math", "reading", "writing", "average_score", "rank"],  
-    "chart_type": "bar",  
-    "visualization_fields": ["student", "average_score"]  
+{
+    "suggested_visualizations": [
+        {  
+            "mode": "infer",  
+            "recommendation": "To rank students based on their average scores, we need to calculate the average score for each student and then rank them accordingly.",  
+            "output_fields": ["student", "major", "math", "reading", "writing", "average_score", "rank"],  
+            "chart_type": "bar",  
+            "visualization_fields": ["student", "average_score"]  
+        }
+    ]
 }  
 ```
 
@@ -149,10 +248,17 @@ class SQLDataRecAgent(object):
             logger.info(choice.message.content + "\n")
             
             json_blocks = extract_json_objects(choice.message.content + "\n")
+            suggested_visualizations = []
             if len(json_blocks) > 0:
-                refined_goal = json_blocks[0]
+                parsed_json = json_blocks[0]
+                if "suggested_visualizations" in parsed_json and isinstance(parsed_json["suggested_visualizations"], list):
+                    suggested_visualizations = parsed_json["suggested_visualizations"]
+                else:
+                    # Handle old format or single specific recommendation by wrapping it in a list
+                    suggested_visualizations = [parsed_json] 
             else:
-                refined_goal = { 'mode': "", 'recommendation': "", 'output_fields': [], 'visualization_fields': [], }
+                # Fallback if no JSON is found
+                suggested_visualizations = [{ 'mode': "", 'recommendation': "No JSON found in response", 'output_fields': [], 'visualization_fields': [], 'chart_type': "" }]
 
             code_blocks = extract_code_from_gpt_response(choice.message.content + "\n", "sql")
 
@@ -194,7 +300,7 @@ class SQLDataRecAgent(object):
             
             result['dialog'] = [*messages, {"role": choice.message.role, "content": choice.message.content}]
             result['agent'] = 'SQLDataRecAgent'
-            result['refined_goal'] = refined_goal
+            result['suggested_visualizations'] = suggested_visualizations
             candidates.append(result)
 
         logger.info("=== Recommendation Candidates ===>")
