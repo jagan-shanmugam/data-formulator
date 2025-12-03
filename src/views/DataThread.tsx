@@ -842,7 +842,7 @@ let SingleThreadGroupView: FC<{
             '& .selected-card': { 
                 border: `2px solid ${theme.palette.primary.light}`,
             },
-            transition: "box-shadow 0.3s ease-in-out",
+            transition: "box-shadow 0.1s linear",
         }}
         data-thread-index={threadIdx}>
         <Box sx={{ display: 'flex', direction: 'ltr', margin: '2px 2px 8px 2px' }}>
@@ -1225,7 +1225,7 @@ export const DataThread: FC<{sx?: SxProps}> = function ({ sx }) {
         flexWrap: drawerOpen ? 'wrap' : 'nowrap',
         gap: 1,
         p: 1,
-        transition: 'max-width 0.3s ease-in-out', // Smooth width transition
+        transition: 'max-width 0.1s linear', // Smooth width transition
     }}>
         {Object.entries(leafTableGroups).map(([groupId, leafTables], i) => {
 

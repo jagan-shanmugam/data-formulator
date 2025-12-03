@@ -12,7 +12,7 @@ export interface ConceptTransformation {
     code: string
 }
 
-export type FieldSource =  "original" | "derived" | "custom";
+export type FieldSource = "custom" | "original";
 
 export interface FieldItem {
     id: string;
@@ -20,21 +20,15 @@ export interface FieldItem {
 
     source: FieldSource;
     tableRef: string; // which table it belongs to, it matters when it's an original field or a derived field
-
-    transform?: ConceptTransformation;
-    temporary?: true; // the field is temporary, and it will be deleted unless it's saved
 }
 
 export const duplicateField = (field: FieldItem) => {
-    let newConcept = {
+    return {
         id: field.id,
         name: field.name,
         source: field.source,
-        transform: field.transform,
         tableRef: field.tableRef,
-        temporary: field.temporary,
     } as FieldItem;
-    return newConcept;
 }
 
 export interface Trigger {

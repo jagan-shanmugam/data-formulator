@@ -38,7 +38,6 @@ import _ from 'lodash';
 import ButtonGroup from '@mui/material/ButtonGroup';
 
 import embed from 'vega-embed';
-import AnimateOnChange from 'react-animate-on-change'
 
 import '../scss/VisualizationView.scss';
 import { useDispatch, useSelector } from 'react-redux';
@@ -82,11 +81,8 @@ import { MuiMarkdown, getOverrides } from 'mui-markdown';
 
 import { dfSelectors } from '../app/dfSlice';
 import { ChartRecBox } from './ChartRecBox';
-import { ConceptShelf } from './ConceptShelf';
 import { CodeExplanationCard, ConceptExplCards, extractConceptExplanations } from './ExplComponents';
 import CodeIcon from '@mui/icons-material/Code';
-import ToggleButton from '@mui/material/ToggleButton';
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 
 export interface VisPanelProps { }
 
@@ -317,23 +313,9 @@ const VegaChartRenderer: FC<{
             true
         );
 
-
-        embed('#' + elementId, { ...assembledChart }, { actions: true, renderer: "svg" }).then(function (result) {
-            if (result.view.container()?.getElementsByTagName("svg")) {
-                let comp = result.view.container()?.getElementsByTagName("svg")[0];
-                if (comp) {
-                    const { width, height } = comp.getBoundingClientRect();
-                    comp?.setAttribute("style", `width: ${width * scaleFactor}px; height: ${height * scaleFactor}px;`);
-                }
-            }
-
-            if (result.view.container()?.getElementsByTagName("canvas")) {
-                let comp = result.view.container()?.getElementsByTagName("canvas")[0];
-                if (comp && scaleFactor != 1) {
-                    const { width, height } = comp.getBoundingClientRect();
-                    comp?.setAttribute("style", `width: ${width * scaleFactor}px; height: ${height * scaleFactor}px;`);
-                }
-            }
+        embed('#' + elementId, { ...assembledChart }, { actions: true, renderer: "canvas" })
+        .then(function (result) {
+            // any post-processing of the canvas can go here
         }).catch((error) => {
             //console.error('Chart rendering error:', error);
         });
@@ -634,32 +616,11 @@ export const ChartEditorFC: FC<{}> = function ChartEditorFC({}) {
         transformCode = `${table.derive.code}`
     }
 
-    // Handle explanation mode changes
-    const handleExplanationModeChange = (
-        event: React.MouseEvent<HTMLElement>,
-        newMode: 'none' | 'code' | 'explanation' | 'concepts',
-    ) => {
-        // If clicking the same mode that's already active, turn it off
-        if (newMode === explanationMode) {
-            setExplanationMode('none');
-            setCodeViewOpen(false);
-            setCodeExplViewOpen(false);
-            setConceptExplanationsOpen(false);
-        } else if (newMode !== null) {
-            // Otherwise, switch to the new mode
-            setExplanationMode(newMode);
-            setCodeViewOpen(newMode === 'code');
-            setCodeExplViewOpen(newMode === 'explanation');
-            setConceptExplanationsOpen(newMode === 'concepts');
-        }
-    };
-
     // Check if concepts are available
     const availableConcepts = extractConceptExplanations(table);
     const hasConcepts = availableConcepts.length > 0;
 
     let derivedTableItems = (resultTable?.derive || table.derive) ? [
-        <Divider key="derived-divider-start" orientation="vertical" variant="middle" flexItem sx={{ mx: 1 }} />,
         <Box key="explanation-toggle-group" sx={{ 
             display: 'flex', 
             alignItems: 'center', 
@@ -789,13 +750,7 @@ export const ChartEditorFC: FC<{}> = function ChartEditorFC({}) {
     ] : [];
     
     let chartActionButtons = [
-        <Box key="data-source" fontSize="small" sx={{ margin: "auto", display: "flex", flexDirection: "row"}}>
-            <Typography component="span" sx={{display: 'flex', flexDirection: 'row', alignItems: 'center', whiteSpace: 'nowrap'}} fontSize="inherit">
-                data: {table.virtual ? <Tooltip key="virtual-table-tooltip" title="this table resides in the backend database, sample rows are used for visualization"><CloudQueueIcon  sx={{ fontSize: '12px', color: 'text.secondary', mx: 0.5}} /></Tooltip> : ""} {table.displayId || table.id}
-            </Typography>
-        </Box>,
         ...derivedTableItems,
-        <Divider key="chart-actions-divider" orientation="vertical" variant="middle" flexItem sx={{ mx: 1 }} />,
         saveButton,
         duplicateButton,
         deleteButton,
@@ -899,16 +854,16 @@ export const ChartEditorFC: FC<{}> = function ChartEditorFC({}) {
     let focusedElement = <Fade key={`fade-${focusedChart.id}-${dataVersion}-${focusedChart.chartType}-${JSON.stringify(focusedChart.encodingMap)}`} 
                             in={!isDataStale} timeout={600}>    
                             <Box sx={{display: "flex", flexDirection: "column", flexShrink: 0, justifyContent: 'center', justifyItems: 'center'}} className="chart-box">
-                                <Box sx={{m: 'auto', minHeight: 240, maxWidth: '90%', overflow: "auto"}}>
+                                <Box sx={{m: 'auto', minHeight: 240, overflow: "auto"}}>
                                     <VegaChartRenderer
                                         key={focusedChart.id}
                                         chart={focusedChart}
                                         conceptShelfItems={conceptShelfItems}
                                         visTableRows={activeVisTableRows}
                                         tableMetadata={table.metadata}
-                                        chartWidth={config.defaultChartWidth}
-                                        chartHeight={config.defaultChartHeight}
-                                        scaleFactor={localScaleFactor}
+                                        chartWidth={Math.round(config.defaultChartWidth * localScaleFactor)}
+                                        chartHeight={Math.round(config.defaultChartHeight * localScaleFactor)}
+                                        scaleFactor={1}
                                         chartUnavailable={chartUnavailable}
                                     />
                                 </Box>
@@ -1032,11 +987,11 @@ export const ChartEditorFC: FC<{}> = function ChartEditorFC({}) {
 
     return <Box ref={componentRef} sx={{overflow: "hidden", display: 'flex', flex: 1}}>
         {synthesisRunning ? <Box sx={{
-                    position: "absolute", height: "calc(100%)", width: "calc(100%)", zIndex: 1001, 
-                    backgroundColor: "rgba(243, 243, 243, 0.8)", display: "flex", alignItems: "center"
-                }}>
-                    <LinearProgress sx={{ width: "100%", height: "100%", opacity: 0.05 }} />
-                </Box> : ''}
+                position: "absolute", height: "calc(100%)", width: "calc(100%)", zIndex: 1001, 
+                backgroundColor: "rgba(243, 243, 243, 0.8)", display: "flex", alignItems: "center"
+            }}>
+                <LinearProgress sx={{ width: "100%", height: "100%", opacity: 0.05 }} />
+            </Box> : ''}
         {chartUnavailable ? "" : chartResizer}
         {content}
     </Box>

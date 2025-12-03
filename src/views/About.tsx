@@ -191,32 +191,15 @@ export const About: FC<{}> = function About({ }) {
         }}>
             <Box sx={{margin:'auto', pb: '5%', display: "flex", flexDirection: "column", textAlign: "center", maxWidth: 1200}}>
                 {/* Header with logo and title */}
-                <Box sx={{
-                    display: 'flex', 
-                    mx: 'auto', 
-                    mt: 6,
-                    mb: 2,
-                    width: 'fit-content', 
-                    flexDirection: 'row', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                }}>
-                    <Box component="img" sx={{ width: 96 }} alt="" src={dfLogo} /> 
-                    <Typography fontSize={72} sx={{
-                        ml: 2, 
-                        letterSpacing: '0.05em', 
-                        fontWeight: 200, 
-                        color: 'text.primary',
-                        display: 'flex',
-                        flexDirection: 'row',
-                        alignItems: 'baseline',
-                    }}>
-                        {toolName} <Typography fontSize={18} sx={{ color: 'text.secondary', ml: 1 }}>v0.5</Typography>
-                    </Typography> 
+                <Box sx={{display: 'flex', mx: 'auto', mt: 4}}>
+                    <Typography fontSize={84} sx={{ml: 2, letterSpacing: '0.05em'}}>{toolName}</Typography> 
                 </Box>
-                <Typography fontSize={18} sx={{mb: 4, color: 'text.secondary', lineHeight: 1.8}}>
-                    Turn (almost) any data into insights with AI agents, with the exploration paths you choose. 
+                <Typography sx={{ 
+                    fontSize: 24, color: theme.palette.text.secondary, 
+                    textAlign: 'center', mb: 4}}>
+                    Explore data with visualizations, powered by AI agents. 
                 </Typography>
+                
                 {actionButtons}
 
                 {/* Interactive Features Carousel */}
@@ -224,11 +207,6 @@ export const About: FC<{}> = function About({ }) {
                     mx: 'auto',
                     maxWidth: 1200,
                     borderRadius: 3, 
-                    background: `
-                        linear-gradient(90deg, ${alpha(theme.palette.text.secondary, 0.02)} 1px, transparent 1px),
-                        linear-gradient(0deg, ${alpha(theme.palette.text.secondary, 0.02)} 1px, transparent 1px)
-                    `,
-                    backgroundSize: '16px 16px',
                     position: 'relative',
                 }}>
                     <Box sx={{ 
@@ -268,22 +246,13 @@ export const About: FC<{}> = function About({ }) {
                             }}>
                                 <Typography 
                                     variant="h4" 
-                                    sx={{ 
-                                        mb: 2, 
-                                        fontWeight: 300,
-                                        color: 'text.primary',
-                                        letterSpacing: '0.02em'
-                                    }}
+                                    sx={{ mb: 2 }}
                                 >
                                     {features[currentFeature].title}
                                 </Typography>
                                 <Typography 
                                     variant="body1" 
-                                    sx={{ 
-                                        color: 'text.secondary',
-                                        lineHeight: 1.8,
-                                        fontSize: '1.1rem'
-                                    }}
+                                    sx={{ color: 'text.secondary', lineHeight: 1.8 }}
                                 >
                                     {features[currentFeature].description}
                                 </Typography>
@@ -302,7 +271,6 @@ export const About: FC<{}> = function About({ }) {
                                                     ? theme.palette.primary.main 
                                                     : alpha(theme.palette.text.secondary, 0.2),
                                                 cursor: 'pointer',
-                                                transition: 'all 0.3s ease',
                                                 '&:hover': {
                                                     bgcolor: index === currentFeature 
                                                         ? theme.palette.primary.main 
@@ -405,18 +373,7 @@ export const About: FC<{}> = function About({ }) {
                                 display: 'flex',
                                 justifyContent: 'center',
                                 textDecoration: 'none',
-                                transition: 'box-shadow 0.3s ease',
-                                animation: 'fadeSlideIn 0.5s ease-out',
-                                '@keyframes fadeSlideIn': {
-                                    '0%': {
-                                        opacity: 0,
-                                        transform: 'translateX(30px)',
-                                    },
-                                    '100%': {
-                                        opacity: 1,
-                                        transform: 'translateX(0)',
-                                    }
-                                },
+                                animation: 'fadeSlideIn 0.1s ease-out',
                                 '&:hover': {
                                     boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
                                     '& .description-overlay': {
@@ -492,20 +449,13 @@ export const About: FC<{}> = function About({ }) {
 
                 <Box sx={{ mt: 6, mx: 2 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: '0.02em' }}>
+                        <Typography variant="caption">
                             How does Data Formulator handle your data?
                         </Typography>
                         <Typography 
                             component="ul" 
                             variant="caption" 
-                            sx={{ 
-                                fontWeight: 300, 
-                                mt: 1,
-                                color: 'text.primary', 
-                                letterSpacing: '0.02em',
-                                textAlign: 'left',
-                                maxWidth: 1000
-                            }}
+                            sx={{ mt: 1, textAlign: 'left' }}
                         >
                             <ul>
                                 <li>📦 <strong>Data Storage:</strong> Uploaded data (csv, xlsx, json, clipboard, messy data etc.) is stored in browser's local storage only</li>
@@ -514,7 +464,7 @@ export const About: FC<{}> = function About({ }) {
                                 <li>🤖 <strong>LLM Endpoints:</strong> Small data samples are sent to LLM endpoints along with the prompt. Use your trusted model provider if working with private data.</li>
                             </ul>
                         </Typography>
-                        <Typography variant="caption" sx={{ mt: 4,color: 'text.secondary', fontWeight: 300, letterSpacing: '0.02em' }}>
+                        <Typography variant="caption" sx={{ mt: 4, color: 'text.secondary' }}>
                             Research Prototype from Microsoft Research
                         </Typography>
                     </Box>

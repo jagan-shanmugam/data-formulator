@@ -10,7 +10,7 @@ import { Typography, Box, Link, Breadcrumbs, useTheme, Fade } from '@mui/materia
 import '../scss/DataView.scss';
 
 import { DictTable } from '../components/ComponentType';
-import { DataFormulatorState, dfActions } from '../app/dfSlice';
+import { DataFormulatorState, dfActions, dfSelectors } from '../app/dfSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import { Type } from '../data/types';
 import { createTableFromFromObjectArray } from '../data/utils';
@@ -30,22 +30,8 @@ export const FreeDataViewFC: FC<FreeDataViewProps> = function DataView() {
     
     const conceptShelfItems = useSelector((state: DataFormulatorState) => state.conceptShelfItems);
     const focusedTableId = useSelector((state: DataFormulatorState) => state.focusedTableId);
-
-    let derivedFields =  conceptShelfItems.filter(f => f.source == "derived" && f.name != "");
-
-    // we only change extTable when conceptShelfItems and tables changes
-    let tableToRender = useMemo(()=>{
-        if (derivedFields.some(f => f.tableRef == focusedTableId)) {
-            return tables.map(table => {
-                // try to let table figure out all fields are derivable from the table
-                let rows = structuredClone(table.rows);
-                let extTable = createTableFromFromObjectArray(`${table.id}`, rows, table.anchored, table.derive);
-                return extTable
-            })
-        } else {
-            return tables;
-        }
-    }, [tables, conceptShelfItems])
+    const focusedChartId = useSelector((state: DataFormulatorState) => state.focusedChartId);
+    const allCharts = useSelector(dfSelectors.getAllCharts);
 
     useEffect(() => {
         if(focusedTableId == undefined && tables.length > 0) {
@@ -132,30 +118,60 @@ export const FreeDataViewFC: FC<FreeDataViewProps> = function DataView() {
     }
 
 
-    let coreTables = tableToRender.filter(t => t.derive == undefined || t.anchored);
-    let tempTables = tableToRender.filter(t => t.derive && !t.anchored);
+    // Get all predecessors of the focused table (including the focused table itself)
+    const getPredecessors = (tableId: string | undefined): DictTable[] => {
+        if (!tableId) return [];
+        const table = tables.find(t => t.id === tableId);
+        if (!table) return [];
+        
+        const predecessors: DictTable[] = [];
+        const visited = new Set<string>();
+        
+        const traverse = (id: string) => {
+            if (visited.has(id)) return;
+            visited.add(id);
+            
+            const t = tables.find(tbl => tbl.id === id);
+            if (!t) return;
+            
+            // First traverse sources (to get them in order)
+            if (t.derive?.source) {
+                t.derive.source.forEach(sourceId => traverse(sourceId));
+            }
+            
+            predecessors.push(t);
+        };
+        
+        traverse(tableId);
+        return predecessors;
+    };
+
+    // Get the table ID from the focused chart
+    const focusedChart = allCharts.find(c => c.id === focusedChartId);
+    const chartTableId = focusedChart?.tableRef;
+    
+    const predecessorTables = getPredecessors(chartTableId);
 
     let genTableLink =  (t: DictTable) => 
         <Link underline="hover" key={t.id} sx={{cursor: "pointer"}} 
             color={theme.palette.primary.main} onClick={()=>{ dispatch(dfActions.setFocusedTable(t.id)) }}>
-            <Typography sx={{fontWeight: t.id == focusedTableId? "bold" : "inherit", fontSize: 'inherit'}} component='span'>{t.displayId || t.id}</Typography>
+            <Typography sx={{fontWeight: t.id === focusedTableId ? "bold" : "inherit", fontSize: 'inherit'}} component='span'>{t.displayId || t.id}</Typography>
         </Link>;
 
     return (
         <Box sx={{height: "100%", display: "flex", flexDirection: "column", background: "rgba(0,0,0,0.02)"}}>
 
-            <Box sx={{display: 'flex'}}>
-                <Typography sx={{display: 'flex', color: 'rgba(0,0,0,0.5)', ml: 1}} component='span'><AnchorIcon sx={{ fontSize: 14, margin: 'auto'}}/></Typography>
-                <Breadcrumbs sx={{fontSize: "12px", margin: "4px 12px"}} separator="·" aria-label="breadcrumb">
-                    {coreTables.map(t => genTableLink(t))}
-                </Breadcrumbs>
-                {/* <Divider variant="inset" orientation="vertical" sx={{margin: '0px 4px'}} /> */}
-                <Typography sx={{display: 'flex', color: 'rgba(0,0,0,0.5)', ml: 1}} component='span'><ParkIcon sx={{ fontSize: 14, margin: 'auto'}}/></Typography>
-                <Breadcrumbs sx={{fontSize: "12px", margin: "4px 12px"}} separator="·" aria-label="breadcrumb">
-                    {tempTables.map(t => genTableLink(t))}
+            <Box sx={{display: 'flex', alignItems: 'center'}}>
+                <Typography sx={{display: 'flex', color: 'rgba(0,0,0,0.5)', ml: 1}} component='span'>
+                    {predecessorTables.length > 0 && (predecessorTables[predecessorTables.length - 1].derive ? 
+                        <ParkIcon sx={{ fontSize: 14, margin: 'auto'}}/> : 
+                        <AnchorIcon sx={{ fontSize: 14, margin: 'auto'}}/>)}
+                </Typography>
+                <Breadcrumbs sx={{fontSize: "12px", margin: "4px 12px"}} separator="›" aria-label="breadcrumb">
+                    {predecessorTables.map(t => genTableLink(t))}
                 </Breadcrumbs>
             </Box>
-            {renderTableBody(tableToRender.find(t => t.id == focusedTableId))}
+            {renderTableBody(tables.find(t => t.id == focusedTableId))}
         </Box>
     );
 }

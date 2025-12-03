@@ -294,7 +294,7 @@ export const DataLoadingChatDialog: React.FC<DataLoadingChatDialogProps> = ({ bu
                 sx={{ '& .MuiDialog-paper': { maxWidth: '100%', maxHeight: 840, minWidth: 800 } }}
             >
                 <DialogTitle sx={{display: "flex"}}>
-                    Vibe Data Loader
+                    Extract Data
                     {dataCleanBlocks.length > 0 && <Tooltip title="Reset dialog">  
                         <IconButton size="small" color='warning' 
                             sx={{

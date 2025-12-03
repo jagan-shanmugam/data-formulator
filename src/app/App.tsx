@@ -253,13 +253,13 @@ const TableMenu: React.FC = () => {
                 <MenuItem onClick={(e) => {}}>
                     <DBTableSelectionDialog buttonElement={
                         <Typography fontSize="inherit" sx={{  }}>
-                            <CloudQueueIcon fontSize="inherit" /> Database
+                            connect to database <CloudQueueIcon fontSize="inherit" /> 
                         </Typography>
                     } />
                 </MenuItem>
                 <MenuItem onClick={(e) => {}}>     
                     <DataLoadingChatDialog buttonElement={<Typography fontSize="inherit" sx={{  }}>
-                        clean data <span style={{fontSize: '11px'}}>(image/messy text)</span>
+                        extract data <span style={{fontSize: '11px'}}>(image/messy text)</span>
                     </Typography>}/>
                 </MenuItem>
                 <MenuItem onClick={(e) => {
@@ -723,9 +723,7 @@ export const AppFC: FC<AppFCProps> = function AppFC(appProps) {
                     </ToggleButton>
                 </ToggleButtonGroup>
                 {!isAboutPage && (
-                    <Box sx={{ display: 'flex', ml: 'auto', fontSize: 14, mr: 1, px: 0.5,
-                                backgroundColor: alpha(theme.palette.primary.main, 0.02),
-                                borderRadius: 4}}>
+                    <Box sx={{ display: 'flex', ml: 'auto', fontSize: 14 }}>
                         {focusedTableId !== undefined && <React.Fragment><ToggleButtonGroup
                             value={viewMode}
                             exclusive
@@ -738,53 +736,24 @@ export const AppFC: FC<AppFCProps> = function AppFC(appProps) {
                                 mr: 2,
                                 height: '28px', 
                                 my: 'auto',
-                                borderRadius: 2,
-                                border: '1px solid rgba(0, 0, 0, 0.1)',
-                                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
                                 '& .MuiToggleButton-root': {
                                     textTransform: 'none',
-                                    fontSize: '14px',
                                     fontWeight: 500,
                                     border: 'none',
-                                    borderRadius: 1,
-                                    px: 1,
-                                    py: 0.5,
                                     '&:hover': {
                                         backgroundColor: 'rgba(0, 0, 0, 0.04)',
                                         color: 'text.primary',
-                                    },
-                                    '&.Mui-selected': {
-                                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                        color: theme.palette.primary.main,
-                                    },
-                                    '&:first-of-type': {
-                                        borderTopRightRadius: 0,
-                                        borderBottomRightRadius: 0,
-                                    },
-                                    '&:last-of-type': {
-                                        borderTopLeftRadius: 0,
-                                        borderBottomLeftRadius: 0,
-                                    }
-                                },
-                                '.mode-icon': {
-                                    animation: 'pulse 3s ease-out infinite',
-                                    '@keyframes pulse': {
-                                        '0%, 80%': { transform: 'scale(1)' },
-                                        '90%': { transform: 'scale(1.3)' },
-                                        '100%': { transform: 'scale(1)' },
                                     },
                                 },
                             }}
                         >
                             <ToggleButton value="editor">
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Box className={viewMode === 'report' ? 'mode-icon' : ''} component="span" sx={{ fontSize: '12px' }}>🔍</Box>
                                     <Box component="span">Explore</Box>
                                 </Box>
                             </ToggleButton>
                             <ToggleButton value="report">
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Box className={viewMode === 'editor' ? 'mode-icon' : ''} component="span" sx={{ fontSize: '12px' }}>✏️</Box>
                                     <Box component="span">
                                         {generatedReports.length > 0 ? `Reports (${generatedReports.length})` : 'Reports'}
                                     </Box>
@@ -914,24 +883,6 @@ export const AppFC: FC<AppFCProps> = function AppFC(appProps) {
             </Box>
         }
     ]);
-
-    let footer = <Box sx={{ zIndex: 0, position: 'absolute', bottom: 0, left: 0, right: 0, color: 'text.secondary', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Button size="small" color="inherit" 
-                sx={{ textTransform: 'none'}} 
-                target="_blank" rel="noopener noreferrer" 
-                href="https://www.microsoft.com/en-us/privacy/privacystatement">Privacy & Cookies</Button>
-        <Divider orientation="vertical" variant="middle" flexItem sx={{ mx: 1 }} />
-        <Button size="small" color="inherit" 
-                sx={{ textTransform: 'none'}} 
-                target="_blank" rel="noopener noreferrer" 
-                href="Microsoft Azure Website Terms of Use">Terms of Use</Button>
-        <Divider orientation="vertical" variant="middle" flexItem sx={{ mx: 1 }} />
-        <Button size="small" color="inherit" 
-                sx={{ textTransform: 'none'}} 
-                target="_blank" rel="noopener noreferrer" 
-                href="https://github.com/microsoft/data-formulator/issues">Contact Us</Button>
-        <Typography sx={{ display: 'inline', fontSize: '12px', ml: 1 }}>@ {new Date().getFullYear()}</Typography>
-    </Box>
 
     let app =
         <Box sx={{ 
