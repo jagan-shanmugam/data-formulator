@@ -168,6 +168,10 @@ export const ModelSelectionButton: React.FC<{}> = ({ }) => {
             .then((data) => {
                 let status = data["status"] || 'error';
                 updateModelStatus(model, status, data["message"] || "");
+                // Auto-select the first good model if none is currently selected
+                if (status === 'ok' && !tempSelectedModelId) {
+                    setTempSelectedModelId(model.id);
+                }
             }).catch((error) => {
                 updateModelStatus(model, 'error', error.message)
             });
@@ -180,7 +184,6 @@ export const ModelSelectionButton: React.FC<{}> = ({ }) => {
         sx={{ '&:last-child td, &:last-child th': { border: 0 }, 
         padding: "6px 6px"}}
     >
-        <TableCell align="left" sx={{ width: '40px' }}></TableCell>
         <TableCell align="left" sx={{ width: '120px' }}>
             <Autocomplete
                 freeSolo
@@ -363,7 +366,6 @@ export const ModelSelectionButton: React.FC<{}> = ({ }) => {
         <Table sx={{ minWidth: 600, "& .MuiTableCell-root": { padding: "4px 8px", borderBottom: "none", fontSize: '0.75rem' } }} size="small" >
             <TableHead>
                 <TableRow>
-                    <TableCell sx={{fontWeight: 'bold', width: '40px'}}></TableCell>
                     <TableCell sx={{fontWeight: 'bold', width: '120px'}}>Provider</TableCell>
                     <TableCell sx={{fontWeight: 'bold', width: '160px'}}>API Key</TableCell>
                     <TableCell sx={{fontWeight: 'bold', width: '160px'}} align="left">Model</TableCell>
@@ -404,11 +406,6 @@ export const ModelSelectionButton: React.FC<{}> = ({ }) => {
                             }}
                             onClick={() => status == 'ok' && setTempSelectedModelId(tempSelectedModelId == model.id ? undefined : model.id)}
                         >
-                            <TableCell align="left" sx={{ borderBottom: noBorderStyle, ...disabledStyle }}>
-                                <Radio checked={tempSelectedModelId == model.id} size="small"
-                                    disabled={status != 'ok'}
-                                    onChange={() => setTempSelectedModelId(tempSelectedModelId == model.id ? undefined : model.id)} />
-                            </TableCell>
                             <TableCell align="left" sx={{ borderBottom: noBorderStyle, ...disabledStyle }}>
                                 <Typography variant="body2" sx={{ fontWeight: 500, fontSize: 'inherit' }}>
                                     {model.endpoint}
@@ -537,14 +534,13 @@ export const ModelSelectionButton: React.FC<{}> = ({ }) => {
         >
             <DialogTitle sx={{display: "flex",  alignItems: "center"}}>Select a model</DialogTitle>
             <DialogContent >
-                <Box sx={{
+            <Box sx={{
                     display: 'flex', 
+                    color: 'text.secondary',
                     alignItems: 'flex-start', 
                     mb: 2,
                     p: 1.5,
-                    borderRadius: 1,
                     backgroundColor: alpha(theme.palette.info.main, 0.08),
-                    border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
                 }}>
                     <Box>
                         <Typography variant="caption" component="div" sx={{ lineHeight: 1.6 }}>
@@ -580,6 +576,7 @@ export const ModelSelectionButton: React.FC<{}> = ({ }) => {
                     </Box>
                 </Box>
                 {modelTable}
+                
             </DialogContent>
             <DialogActions>
                 {!serverConfig.DISABLE_DISPLAY_KEYS && (

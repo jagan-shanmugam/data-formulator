@@ -222,11 +222,18 @@ export class TableStatisticsView extends React.Component<TableStatisticsViewProp
 }
 
 export const DBTableSelectionDialog: React.FC<{ 
-    buttonElement: any, 
-    sx?: SxProps
+    buttonElement?: any, 
+    sx?: SxProps,
+    onOpen?: () => void,
+    // Controlled mode props
+    open?: boolean,
+    onClose?: () => void
 }> = function DBTableSelectionDialog({ 
     buttonElement,
     sx,
+    onOpen,
+    open: controlledOpen,
+    onClose,
 }) {
     
     const theme = useTheme();
@@ -236,7 +243,14 @@ export const DBTableSelectionDialog: React.FC<{
     const tables = useSelector((state: DataFormulatorState) => state.tables);
     const serverConfig = useSelector((state: DataFormulatorState) => state.serverConfig);
 
-    const [tableDialogOpen, setTableDialogOpen] = useState<boolean>(false);
+    const [internalOpen, setInternalOpen] = useState<boolean>(false);
+    
+    // Support both controlled and uncontrolled modes
+    const isControlled = controlledOpen !== undefined;
+    const tableDialogOpen = isControlled ? controlledOpen : internalOpen;
+    const setTableDialogOpen = isControlled 
+        ? (open: boolean) => { if (!open && onClose) onClose(); }
+        : setInternalOpen;
     const [tableAnalysisMap, setTableAnalysisMap] = useState<Record<string, ColumnStatistics[] | null>>({});
     
     // maps data loader type to list of param defs
@@ -939,31 +953,34 @@ export const DBTableSelectionDialog: React.FC<{
 
     return (
         <>
-            <Tooltip 
-                title={serverConfig.DISABLE_DATABASE ? (
-                    <Typography sx={{ fontSize: '11px' }}>
-                        Install Data Formulator locally to use database. <br />
-                        Link: <Link 
-                            href="https://github.com/microsoft/data-formulator" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            sx={{ color: 'inherit', textDecoration: 'underline' }}
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            https://github.com/microsoft/data-formulator
-                        </Link>
-                </Typography>
-            ) : ""}
-                placement="top"
-            >
-                <span style={{cursor: serverConfig.DISABLE_DATABASE ? 'help' : 'pointer'}}>
-                    <Button variant="text"   sx={{fontSize: "inherit", gap: 1}} disabled={serverConfig.DISABLE_DATABASE} onClick={() => {
-                        setTableDialogOpen(true);
-                    }}>
-                        {buttonElement}
-                    </Button>
-                </span>
-            </Tooltip>
+            {buttonElement && (
+                <Tooltip 
+                    title={serverConfig.DISABLE_DATABASE ? (
+                        <Typography sx={{ fontSize: '11px' }}>
+                            Install Data Formulator locally to use database. <br />
+                            Link: <Link 
+                                href="https://github.com/microsoft/data-formulator" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                sx={{ color: 'inherit', textDecoration: 'underline' }}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                https://github.com/microsoft/data-formulator
+                            </Link>
+                    </Typography>
+                ) : ""}
+                    placement="top"
+                >
+                    <span style={{cursor: serverConfig.DISABLE_DATABASE ? 'help' : 'pointer'}}>
+                        <Button variant="text" sx={{fontSize: "inherit", gap: 1}} disabled={serverConfig.DISABLE_DATABASE} onClick={() => {
+                            setTableDialogOpen(true);
+                            onOpen?.();
+                        }}>
+                            {buttonElement}
+                        </Button>
+                    </span>
+                </Tooltip>
+            )}
             <Dialog
                 key="db-table-selection-dialog" 
                 onClose={() => {setTableDialogOpen(false)}} 
@@ -1028,27 +1045,6 @@ export const DataLoaderForm: React.FC<{
     let [isConnecting, setIsConnecting] = useState(false);
     let [mode, setMode] = useState<"view tables" | "query">("view tables");
 
-    // Initialize params with default values if not already set
-    React.useEffect(() => {
-        const defaultParams: Record<string, string> = {};
-        let needsUpdate = false;
-        
-        for (const paramDef of paramDefs) {
-            if (params[paramDef.name] === undefined && paramDef.default !== undefined) {
-                defaultParams[paramDef.name] = String(paramDef.default);
-                needsUpdate = true;
-            } else if (params[paramDef.name] !== undefined) {
-                defaultParams[paramDef.name] = params[paramDef.name];
-            }
-        }
-        
-        if (needsUpdate) {
-            dispatch(dfActions.updateDataLoaderConnectParams({
-                dataLoaderType,
-                params: { ...params, ...defaultParams }
-            }));
-        }
-    }, [dataLoaderType, paramDefs]);
     const toggleDisplaySamples = (tableName: string) => {
         setDisplaySamples({...displaySamples, [tableName]: !displaySamples[tableName]});
     }
@@ -1192,8 +1188,8 @@ export const DataLoaderForm: React.FC<{
                             required={paramDef.required}
                             key={paramDef.name}
                             label={paramDef.name}
-                            value={params[paramDef.name] ?? paramDef.default ?? ''}
-                            placeholder={paramDef.description}
+                            value={params[paramDef.name] ?? ''}
+                            placeholder={paramDef.default ? `e.g. ${paramDef.default}` : paramDef.description}
                             onChange={(event: any) => { 
                                 dispatch(dfActions.updateDataLoaderConnectParam({
                                     dataLoaderType, paramName: paramDef.name, 

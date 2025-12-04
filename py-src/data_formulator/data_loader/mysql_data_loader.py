@@ -57,24 +57,38 @@ MySQL Connection Instructions:
         self.params = params
         self.duck_db_conn = duck_db_conn
         
-        # Establish native MySQL connection using pymysql
-        port = self.params.get('port', 3306)
+        # Get params as-is from frontend
+        host = self.params.get('host', '')
+        user = self.params.get('user', '')
+        password = self.params.get('password', '')
+        database = self.params.get('database', '')
+        
+        # Validate required params
+        if not host:
+            raise ValueError("MySQL host is required")
+        if not user:
+            raise ValueError("MySQL user is required")
+        if not database:
+            raise ValueError("MySQL database is required")
+        
+        # Handle port (only field with sensible default)
+        port = self.params.get('port', '')
         if isinstance(port, str):
-            port = int(port) if port.strip() else 3306
-        if port is None:
+            port = int(port) if port else 3306
+        elif not port:
             port = 3306
         
         try:
             self.mysql_conn = pymysql.connect(
-                host=self.params.get('host', 'localhost'),
-                user=self.params.get('user', 'root'),
-                password=self.params.get('password', ''),
-                database=self.params.get('database', 'mysql'),
+                host=host,
+                user=user,
+                password=password,
+                database=database,
                 port=port,
                 cursorclass=pymysql.cursors.DictCursor,
                 charset='utf8mb4'
             )
-            self.database = self.params.get('database', 'mysql')
+            self.database = database
             logger.info(f"Successfully connected to MySQL database: {self.database}")
         except Exception as e:
             logger.error(f"Failed to connect to MySQL: {e}")
@@ -103,18 +117,22 @@ MySQL Connection Instructions:
             self.mysql_conn.ping(reconnect=True)
         except Exception as e:
             logger.warning(f"Reconnection attempt failed: {e}")
-            # Try to create a new connection
-            port = self.params.get('port', 3306)
+            # Try to create a new connection using stored params
+            host = self.params.get('host', '')
+            user = self.params.get('user', '')
+            password = self.params.get('password', '')
+            
+            port = self.params.get('port', '')
             if isinstance(port, str):
-                port = int(port) if port.strip() else 3306
-            if port is None:
+                port = int(port) if port else 3306
+            elif not port:
                 port = 3306
             
             self.mysql_conn = pymysql.connect(
-                host=self.params.get('host', 'localhost'),
-                user=self.params.get('user', 'root'),
-                password=self.params.get('password', ''),
-                database=self.params.get('database', 'mysql'),
+                host=host,
+                user=user,
+                password=password,
+                database=self.database,
                 port=port,
                 cursorclass=pymysql.cursors.DictCursor,
                 charset='utf8mb4'

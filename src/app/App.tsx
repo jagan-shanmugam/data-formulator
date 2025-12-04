@@ -169,7 +169,7 @@ export const ExportStateButton: React.FC<{}> = ({ }) => {
         // Fields to exclude from serialization
         const excludedFields = new Set([
             'models',
-            'modelSlots', 
+            'selectedModelId',
             'testedModels',
             'dataLoaderConnectParams',
             'sessionId',
@@ -221,7 +221,19 @@ export interface AppFCProps {
 // Extract menu components into separate components to prevent full app re-renders
 const TableMenu: React.FC = () => {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const [openDialog, setOpenDialog] = useState<'database' | 'extract' | 'paste' | 'upload' | null>(null);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
     const open = Boolean(anchorEl);
+
+    const handleOpenDialog = (dialog: 'database' | 'extract' | 'paste' | 'upload') => {
+        setAnchorEl(null);
+        if (dialog === 'upload') {
+            // For file upload, trigger the hidden file input
+            fileInputRef.current?.click();
+        } else {
+            setOpenDialog(dialog);
+        }
+    };
     
     return (
         <>
@@ -246,40 +258,48 @@ const TableMenu: React.FC = () => {
                 }}
                 aria-labelledby="add-table-button"
                 sx={{ 
-                    '& .MuiMenuItem-root': { padding: 0, margin: 0 } ,
-                    '& .MuiTypography-root': { fontSize: 14, display: 'flex', alignItems: 'center', textTransform: 'none',gap: 1 }
+                    '& .MuiMenuItem-root': { padding: '4px 8px' },
+                    '& .MuiTypography-root': { fontSize: 14, display: 'flex', alignItems: 'center', textTransform: 'none', gap: 1 }
                 }}
             >
-                <MenuItem onClick={(e) => {}}>
-                    <DBTableSelectionDialog buttonElement={
-                        <Typography fontSize="inherit" sx={{  }}>
-                            connect to database <CloudQueueIcon fontSize="inherit" /> 
-                        </Typography>
-                    } />
+                <MenuItem onClick={() => handleOpenDialog('database')}>
+                    <Typography fontSize="inherit">
+                        connect to database <CloudQueueIcon fontSize="inherit" /> 
+                    </Typography>
                 </MenuItem>
-                <MenuItem onClick={(e) => {}}>     
-                    <DataLoadingChatDialog buttonElement={<Typography fontSize="inherit" sx={{  }}>
+                <MenuItem onClick={() => handleOpenDialog('extract')}>
+                    <Typography fontSize="inherit">
                         extract data <span style={{fontSize: '11px'}}>(image/messy text)</span>
-                    </Typography>}/>
+                    </Typography>
                 </MenuItem>
-                <MenuItem onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }}>
-                    <TableCopyDialogV2 buttonElement={
-                        <Typography sx={{  }}>
-                            paste data <span style={{fontSize: '11px'}}>(csv/tsv)</span>
-                        </Typography>
-                    } disabled={false} />
+                <MenuItem onClick={() => handleOpenDialog('paste')}>
+                    <Typography>
+                        paste data <span style={{fontSize: '11px'}}>(csv/tsv)</span>
+                    </Typography>
                 </MenuItem>
-                <MenuItem onClick={(e) => {}} >
-                    <TableUploadDialog buttonElement={
-                        <Typography sx={{ }}>
-                            upload data file <span style={{fontSize: '11px'}}>(csv/tsv/json)</span>
-                        </Typography>
-                    } disabled={false} />
+                <MenuItem onClick={() => handleOpenDialog('upload')}>
+                    <Typography>
+                        upload data file <span style={{fontSize: '11px'}}>(csv/tsv/json)</span>
+                    </Typography>
                 </MenuItem>
             </Menu>
+            
+            {/* Dialogs rendered outside the Menu to avoid keyboard event issues */}
+            <DBTableSelectionDialog 
+                open={openDialog === 'database'} 
+                onClose={() => setOpenDialog(null)} 
+            />
+            <DataLoadingChatDialog 
+                open={openDialog === 'extract'} 
+                onClose={() => setOpenDialog(null)} 
+            />
+            <TableCopyDialogV2 
+                open={openDialog === 'paste'} 
+                onClose={() => setOpenDialog(null)} 
+            />
+            <TableUploadDialog 
+                fileInputRef={fileInputRef}
+            />
         </>
     );
 };
