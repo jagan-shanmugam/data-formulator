@@ -774,7 +774,7 @@ export const ChartEditorFC: FC<{}> = function ChartEditorFC({}) {
 
     let chartActionItems = isDataStale ? [] : (
         <Box sx={{display: "flex", flexDirection: "column", flex: 1, my: 1}}>
-            {(table.virtual || table.rows.length > 1000) && !(chartUnavailable || encodingShelfEmpty) ? (
+            {(table.virtual || table.rows.length > 5000) && !(chartUnavailable || encodingShelfEmpty) ? (
                 <Box sx={{ display: 'flex', flexDirection: "row", margin: "auto", justifyContent: 'center', alignItems: 'center'}}>
                     <Typography component="span" fontSize="small" color="text.secondary" sx={{textAlign:'center'}}>
                         visualizing

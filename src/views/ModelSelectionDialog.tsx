@@ -9,8 +9,6 @@ import {
     DataFormulatorState,
     dfActions,
     ModelConfig,
-    ModelSlots,
-    ModelSlotType,
     dfSelectors,
 } from '../app/dfSlice'
 
@@ -43,6 +41,7 @@ import {
     Paper,
     Box,
     Divider,
+    Checkbox,
 } from '@mui/material';
 
 
@@ -55,6 +54,7 @@ import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 import { getUrls } from '../app/utils';
 
@@ -81,12 +81,11 @@ export const ModelSelectionButton: React.FC<{}> = ({ }) => {
 
     const dispatch = useDispatch();
     const models = useSelector((state: DataFormulatorState) => state.models);
-    const modelSlots = useSelector((state: DataFormulatorState) => state.modelSlots);
+    const selectedModelId = useSelector((state: DataFormulatorState) => state.selectedModelId);
     const testedModels = useSelector((state: DataFormulatorState) => state.testedModels);
 
     const [modelDialogOpen, setModelDialogOpen] = useState<boolean>(false);
     const [showKeys, setShowKeys] = useState<boolean>(false);
-    const [tempModelSlots, setTempModelSlots] = useState<ModelSlots>(modelSlots);
     const [providerModelOptions, setProviderModelOptions] = useState<{[key: string]: string[]}>({
         'openai': [],
         'azure': [],
@@ -104,19 +103,7 @@ export const ModelSelectionButton: React.FC<{}> = ({ }) => {
     }
 
     // Helper functions for slot management
-    const updateTempSlot = (slotType: ModelSlotType, modelId: string | undefined) => {
-        setTempModelSlots(prev => ({ ...prev, [slotType]: modelId }));
-    };
-
-    const isModelAssignedToSlot = (modelId: string, slotType: ModelSlotType) => {
-        return tempModelSlots[slotType] === modelId;
-    };
-
-    // Ensure tempModelSlots is updated when modelSlots changes
-    React.useEffect(() => {
-        setTempModelSlots(modelSlots);
-    }, [modelSlots]);
-
+    const [tempSelectedModelId, setTempSelectedModelId] = useState<string | undefined>(selectedModelId);
     const [newEndpoint, setNewEndpoint] = useState<string>(""); // openai, azure, ollama etc
     const [newModel, setNewModel] = useState<string>("");
     const [newApiKey, setNewApiKey] = useState<string>("");
@@ -188,126 +175,13 @@ export const ModelSelectionButton: React.FC<{}> = ({ }) => {
 
     let readyToTest = newModel && (newApiKey || newApiBase);
 
-    // Create enhanced slot assignment summary component
-    const SlotAssignmentSummary: React.FC = () => {
-        const slotTypes = dfSelectors.getAllSlotTypes();
-        
-        return (
-            <Box sx={{ mb: 2 }}>
-                <Typography variant="body1" sx={{ mb: 2, fontWeight: 'bold' }}>Model Assignments</Typography>
-                <Box sx={{ display: 'flex', gap: 1.5, mb: 2, flexWrap: 'wrap' }}>
-                    {slotTypes.map(slotType => {
-                        const assignedModelId = tempModelSlots[slotType];
-                        const assignedModel = assignedModelId ? models.find(m => m.id === assignedModelId) : undefined;
-                        
-                        let modelExplanation = "";
-                        if (slotType == 'generation') {
-                            modelExplanation = "exploration planning, code generation";
-                        } else if (slotType == 'hint') {
-                            modelExplanation = "background data type inference, code explanation";
-                        }
-
-                        return (
-                            <Box 
-                                key={slotType} 
-                                sx={{ 
-                                    flex: '1 1 250px',
-                                    minWidth: '250px',
-                                    p: 1.5, 
-                                    border: '1px solid #e0e0e0', 
-                                    backgroundColor: assignedModel && getStatus(assignedModelId) == 'ok' ? alpha(theme.palette.success.main, 0.05) : 
-                                        assignedModel && getStatus(assignedModelId) == 'error' ? alpha(theme.palette.error.main, 0.05) : alpha(theme.palette.warning.main, 0.05),
-                                    borderRadius: 1,
-                                    borderColor: assignedModel && getStatus(assignedModelId) == 'ok' ? theme.palette.success.main : 
-                                        getStatus(assignedModelId) == 'error' ? theme.palette.error.main : theme.palette.warning.main
-                                }}
-                            >
-                                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                                    Model for {slotType}
-                                </Typography>
-                                <Typography color="text.secondary" sx={{fontSize: '0.75rem', mt: 0.5, mb: 1 }}>
-                                    - {modelExplanation}
-                                </Typography>
-                                <FormControl fullWidth size="small">
-                                    <Select
-                                        required
-                                        value={assignedModelId || ''}
-                                        onChange={(event: SelectChangeEvent) => {
-                                            const modelId = event.target.value || undefined;
-                                            updateTempSlot(slotType, modelId);
-                                        }}
-                                        displayEmpty
-                                        sx={{ fontSize: '0.875rem' }}
-                                        renderValue={(selected) => {
-                                            if (!selected) {
-                                                return <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                                                <Box sx={{ flex: 1 }}>
-                                                    <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
-                                                        No model assigned
-                                                    </Typography>
-                                                </Box>
-                                                <ErrorOutlineIcon sx={{ color: 'error.main', ml: 1 }} fontSize="small" />
-                                            </Box>;
-                                            }
-                                            const model = models.find(m => m.id === selected);
-                                            return model ? <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                                            <Box sx={{ flex: 1 }}>
-                                                <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
-                                                    {model.endpoint}/{model.model}
-                                                    {model.api_base && (
-                                                        <Typography variant="caption" sx={{ ml: 0.5, color: 'text.secondary', fontSize: '0.75rem' }}>
-                                                            ({model.api_base})
-                                                        </Typography>
-                                                    )}
-                                                </Typography>
-                                            </Box>
-                                            {getStatus(assignedModelId) === 'ok' ? <CheckCircleOutlineIcon sx={{ color: 'success.main', ml: 1 }} fontSize="small" /> 
-                                                : getStatus(assignedModelId) === 'error' ? <ErrorOutlineIcon sx={{ color: 'error.main', ml: 1 }} fontSize="small" />
-                                                : <HelpOutlineIcon sx={{ color: 'warning.main', ml: 1 }} fontSize="small" />}
-                                        </Box> : 'Unknown model';
-                                        }}
-                                    >
-                                        <MenuItem value="">
-                                            <Typography sx={{ color: 'text.secondary', fontSize: '0.875rem' }}>No assignment</Typography>
-                                        </MenuItem>
-                                        {models.map((model) => (
-                                            <MenuItem key={model.id} value={model.id} disabled={getStatus(model.id) !== 'ok'}>
-                                                <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                                                    <Box sx={{ flex: 1 }}>
-                                                        <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
-                                                            {model.endpoint}/{model.model}
-                                                        </Typography>
-                                                        {model.api_base && (
-                                                            <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
-                                                                {model.api_base}
-                                                            </Typography>
-                                                        )}
-                                                    </Box>
-                                                    {getStatus(model.id) === 'ok' ? <CheckCircleOutlineIcon sx={{ color: 'success.main', ml: 1 }} fontSize="small" /> 
-                                                        : getStatus(model.id) === 'error' ? <ErrorOutlineIcon sx={{ color: 'error.main', ml: 1 }} fontSize="small" />
-                                                        : <HelpOutlineIcon sx={{ color: 'warning.main', ml: 1 }} fontSize="small" />}
-                                                </Box>
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
-                            </Box>
-                        );
-                    })}
-                </Box>
-                <Typography variant="caption" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-                    <strong>💡 Tip:</strong> Use powerful models for generation tasks and faster models for hints.
-                </Typography>
-            </Box>
-        );
-    };
-
     let newModelEntry = <TableRow
         key={`new-model-entry`}
         sx={{ '&:last-child td, &:last-child th': { border: 0 }, 
         padding: "6px 6px"}}
     >
-        <TableCell align="left">
+        <TableCell align="left" sx={{ width: '40px' }}></TableCell>
+        <TableCell align="left" sx={{ width: '120px' }}>
             <Autocomplete
                 freeSolo
                 value={newEndpoint}
@@ -447,11 +321,7 @@ export const ModelSelectionButton: React.FC<{}> = ({ }) => {
                                         updateModelStatus(model, status, data["message"] || "");
                                         // Only assign to slot if test is successful
                                         if (status === 'ok') {
-                                            for (let slotType of dfSelectors.getAllSlotTypes()) {
-                                                if (!tempModelSlots[slotType]) {
-                                                    updateTempSlot(slotType, id);
-                                                }
-                                            }
+                                            setTempSelectedModelId(id);
                                         }
                                     }).catch((error) => {
                                         updateModelStatus(model, 'error', error.message)
@@ -491,8 +361,9 @@ export const ModelSelectionButton: React.FC<{}> = ({ }) => {
 
     let modelTable = <TableContainer>
         <Table sx={{ minWidth: 600, "& .MuiTableCell-root": { padding: "4px 8px", borderBottom: "none", fontSize: '0.75rem' } }} size="small" >
-            <TableHead >
+            <TableHead>
                 <TableRow>
+                    <TableCell sx={{fontWeight: 'bold', width: '40px'}}></TableCell>
                     <TableCell sx={{fontWeight: 'bold', width: '120px'}}>Provider</TableCell>
                     <TableCell sx={{fontWeight: 'bold', width: '160px'}}>API Key</TableCell>
                     <TableCell sx={{fontWeight: 'bold', width: '160px'}} align="left">Model</TableCell>
@@ -519,10 +390,8 @@ export const ModelSelectionButton: React.FC<{}> = ({ }) => {
 
                     const borderStyle = ['error'].includes(status) ? '1px dashed lightgray' : undefined;
                     const noBorderStyle = ['error'].includes(status) ? 'none' : undefined;
+                    const disabledStyle = status != 'ok' ? { cursor: 'default', opacity: 0.5 } : undefined;
                     
-                    // Check if model is assigned to any slot
-                    const isAssignedToAnySlot = dfSelectors.getAllSlotTypes().some(slotType => isModelAssignedToSlot(model.id, slotType));
-
                     return (
                         <React.Fragment key={`${model.id}`}>
                         <TableRow
@@ -530,15 +399,22 @@ export const ModelSelectionButton: React.FC<{}> = ({ }) => {
                             sx={{ 
                                 '& .MuiTableCell-root': { fontSize: '0.75rem' },
                                 '&:hover': { backgroundColor: '#f8f9fa' },
-                                backgroundColor: isAssignedToAnySlot ? alpha(theme.palette.success.main, 0.07) : '#fff'
+                                border: tempSelectedModelId == model.id ? `2px solid ${theme.palette.primary.main}` : 'none',
+                                cursor: status == 'ok' ? 'pointer' : 'default',
                             }}
+                            onClick={() => status == 'ok' && setTempSelectedModelId(tempSelectedModelId == model.id ? undefined : model.id)}
                         >
-                            <TableCell align="left" sx={{ borderBottom: noBorderStyle }}>
+                            <TableCell align="left" sx={{ borderBottom: noBorderStyle, ...disabledStyle }}>
+                                <Radio checked={tempSelectedModelId == model.id} size="small"
+                                    disabled={status != 'ok'}
+                                    onChange={() => setTempSelectedModelId(tempSelectedModelId == model.id ? undefined : model.id)} />
+                            </TableCell>
+                            <TableCell align="left" sx={{ borderBottom: noBorderStyle, ...disabledStyle }}>
                                 <Typography variant="body2" sx={{ fontWeight: 500, fontSize: 'inherit' }}>
                                     {model.endpoint}
                                 </Typography>
                             </TableCell>
-                            <TableCell component="th" scope="row" sx={{ borderBottom: borderStyle }}>
+                            <TableCell component="th" scope="row" sx={{ borderBottom: borderStyle, ...disabledStyle }}>
                                 {model.api_key ? (showKeys ? 
                                     <Typography
                                         variant="body2"
@@ -557,12 +433,12 @@ export const ModelSelectionButton: React.FC<{}> = ({ }) => {
                                      : <Typography sx={{color: "text.secondary", fontSize: 'inherit', fontStyle: 'italic'}}>None</Typography>
                                 }
                             </TableCell>
-                            <TableCell align="left" sx={{ borderBottom: borderStyle }}>
+                            <TableCell align="left" sx={{ borderBottom: borderStyle, ...disabledStyle }}>
                                 <Typography variant="body2" sx={{ fontSize: 'inherit', fontWeight: 500 }}>
                                     {model.model}
                                 </Typography>
                             </TableCell>
-                            <TableCell align="left" sx={{ borderBottom: borderStyle }}>
+                            <TableCell align="left" sx={{ borderBottom: borderStyle, ...disabledStyle }}>
                                 {model.api_base ? (
                                     <Typography variant="body2" sx={{ 
                                         fontSize: 'inherit', 
@@ -578,7 +454,7 @@ export const ModelSelectionButton: React.FC<{}> = ({ }) => {
                                     </Typography>
                                 )}
                             </TableCell>
-                            <TableCell align="left" sx={{ borderBottom: borderStyle }}>
+                            <TableCell align="left" sx={{ borderBottom: borderStyle, ...disabledStyle }}>
                                 {model.api_version ? (
                                     <Typography variant="body2" sx={{ fontSize: 'inherit' }}>
                                         {model.api_version}
@@ -609,11 +485,9 @@ export const ModelSelectionButton: React.FC<{}> = ({ }) => {
                                         onClick={()=>{
                                             dispatch(dfActions.removeModel(model.id));
                                             // Remove from all slots if assigned
-                                            dfSelectors.getAllSlotTypes().forEach(slotType => {
-                                                if (isModelAssignedToSlot(model.id, slotType)) {
-                                                    updateTempSlot(slotType, undefined);
-                                                }
-                                            });
+                                            if (tempSelectedModelId == model.id) {
+                                                setTempSelectedModelId(undefined);
+                                            }
                                         }}
                                         sx={{ p: 0.75 }}
                                     >
@@ -636,30 +510,20 @@ export const ModelSelectionButton: React.FC<{}> = ({ }) => {
                     )
                 })}
                 {newModelEntry}
-                <TableRow>
-                    <TableCell colSpan={8} sx={{ pt: 2, pb: 1 }}>
-                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5, fontSize: '0.75rem' }}>
-                            <strong>Configuration:</strong> Based on LiteLLM. <a href="https://docs.litellm.ai/docs/" target="_blank" rel="noopener noreferrer">See supported providers</a>.
-                            Use 'openai' provider for OpenAI-compatible APIs.
-                        </Typography>
-
-                    </TableCell>
-                </TableRow>
                 </TableBody>
             </Table>
     </TableContainer>
 
-    let notAllSlotsReady = Object.values(tempModelSlots).filter(id => id).length !== dfSelectors.getAllSlotTypes().length 
-    || Object.values(tempModelSlots).filter(id => id).some(id => getStatus(id) !== 'ok');
+    let modelNotReady = tempSelectedModelId == undefined || getStatus(tempSelectedModelId) !== 'ok';
 
-    let genModelName = models.find(m => m.id == modelSlots['generation'])?.model || 'Unknown';
-    let hintModelName = models.find(m => m.id == modelSlots['hint'])?.model || 'Unknown';
-    let modelNames = (genModelName == hintModelName) ? genModelName : `${genModelName} / ${hintModelName}`;
+    let tempModel = models.find(m => m.id == tempSelectedModelId);
+    let tempModelName = tempModel ? `${tempModel.endpoint}/${tempModel.model}` : 'Please select a model';
+    let selectedModelName = models.find(m => m.id == selectedModelId)?.model || 'Unselected';
 
     return <>
-        <Tooltip title="Configure model assignments for different task types">
-            <Button sx={{fontSize: "inherit", textTransform: "none"}} variant="text" color={notAllSlotsReady ? 'warning' : "primary"} onClick={()=>{setModelDialogOpen(true)}}>
-                {notAllSlotsReady ? 'Select Models' : modelNames}
+        <Tooltip title="Select a model">
+            <Button sx={{fontSize: "inherit", textTransform: "none"}} variant="text" color={modelNotReady ? 'warning' : "primary"} onClick={()=>{setModelDialogOpen(true)}}>
+                {modelNotReady ? 'Select Models' : selectedModelName}
             </Button>
         </Tooltip>
         <Dialog 
@@ -671,14 +535,50 @@ export const ModelSelectionButton: React.FC<{}> = ({ }) => {
                 }
             }}
         >
-            <DialogTitle sx={{display: "flex",  alignItems: "center"}}>Configure Models for Different Tasks</DialogTitle>
+            <DialogTitle sx={{display: "flex",  alignItems: "center"}}>Select a model</DialogTitle>
             <DialogContent >
-                <SlotAssignmentSummary />
-                <Divider sx={{ my: 2 }} textAlign="left"> 
-                    <Typography variant="caption" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-                    available models
-                    </Typography>
-                </Divider>
+                <Box sx={{
+                    display: 'flex', 
+                    alignItems: 'flex-start', 
+                    mb: 2,
+                    p: 1.5,
+                    borderRadius: 1,
+                    backgroundColor: alpha(theme.palette.info.main, 0.08),
+                    border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
+                }}>
+                    <Box>
+                        <Typography variant="caption" component="div" sx={{ lineHeight: 1.6 }}>
+                            • Models with strong code generation capabilities (e.g., <code style={{ 
+                                backgroundColor: alpha(theme.palette.text.primary, 0.05), 
+                                padding: '1px 4px', 
+                                borderRadius: 3,
+                                fontSize: '0.7rem'
+                            }}>gpt-5.1</code>, <code style={{ 
+                                backgroundColor: alpha(theme.palette.text.primary, 0.05), 
+                                padding: '1px 4px', 
+                                borderRadius: 3,
+                                fontSize: '0.7rem'
+                            }}>claude-sonnet-4-5</code>) provide best experience.
+                        </Typography>
+                        <Typography variant="caption" component="div" sx={{ lineHeight: 1.6, mt: 0.5 }}>
+                            • Model configuration based on LiteLLM. <a href="https://docs.litellm.ai/docs/" target="_blank" rel="noopener noreferrer">See supported providers</a>.
+                            Use <code style={{ 
+                                backgroundColor: alpha(theme.palette.text.primary, 0.05), 
+                                padding: '1px 4px', 
+                                borderRadius: 3,
+                                fontSize: '0.7rem'
+                            }}>openai</code> provider for OpenAI-compatible APIs.
+                        </Typography>
+                        <Typography variant="caption" component="div" sx={{ lineHeight: 1.6, mt: 0.5 }}>
+                            • Example configuration: <code style={{ 
+                                backgroundColor: alpha(theme.palette.text.primary, 0.05), 
+                                padding: '1px 4px', 
+                                borderRadius: 3,
+                                fontSize: '0.7rem'
+                            }}>{`{ "provider": "openai", "api_key": "sk-...", "model": "gpt-5.1", "api_base": "", "api_version": "" }`}</code>
+                        </Typography>
+                    </Box>
+                </Box>
                 {modelTable}
             </DialogContent>
             <DialogActions>
@@ -688,13 +588,13 @@ export const ModelSelectionButton: React.FC<{}> = ({ }) => {
                             {showKeys ? 'hide' : 'show'} keys
                     </Button>
                 )}
-                <Button disabled={notAllSlotsReady} 
-                    variant={Object.values(tempModelSlots).filter(id => id).length == 0 ? 'text' : 'contained'}
+                <Button disabled={modelNotReady} sx={{textTransform: 'none'}}
+                    variant={modelNotReady ? 'text' : 'contained'}
                     onClick={()=>{
-                        dispatch(dfActions.setModelSlots(tempModelSlots));
-                        setModelDialogOpen(false);}}>Apply Slot Assignments</Button>
+                        dispatch(dfActions.selectModel(tempSelectedModelId));
+                        setModelDialogOpen(false);}}>Use {tempModelName}</Button>
                 <Button onClick={()=>{
-                    setTempModelSlots(modelSlots);
+                    setTempSelectedModelId(selectedModelId);
                     setModelDialogOpen(false);
                 }}>cancel</Button>
             </DialogActions>

@@ -9,6 +9,7 @@ import {
     DataFormulatorState,
     dfActions,
     dfSelectors,
+    ModelConfig,
 } from '../app/dfSlice'
 
 import _ from 'lodash';
@@ -58,15 +59,9 @@ export const DataFormulatorFC = ({ }) => {
 
     const tables = useSelector((state: DataFormulatorState) => state.tables);
     const models = useSelector((state: DataFormulatorState) => state.models);
-    const modelSlots = useSelector((state: DataFormulatorState) => state.modelSlots);
+    const selectedModelId = useSelector((state: DataFormulatorState) => state.selectedModelId);
     const viewMode = useSelector((state: DataFormulatorState) => state.viewMode);
     const theme = useTheme();
-
-    const noBrokenModelSlots= useSelector((state: DataFormulatorState) => {
-        const slotTypes = dfSelectors.getAllSlotTypes();
-        return slotTypes.every(
-            slotType => state.modelSlots[slotType] !== undefined && state.testedModels.find(t => t.id == state.modelSlots[slotType])?.status != 'error');
-    });
 
     const dispatch = useDispatch();
 
@@ -136,11 +131,12 @@ export const DataFormulatorFC = ({ }) => {
 
     useEffect(() => {
         const findWorkingModel = async () => {
-            let assignedModels = models.filter(m => Object.values(modelSlots).includes(m.id));
-            let unassignedModels = models.filter(m => !Object.values(modelSlots).includes(m.id));
-            
-            // Test assigned models in parallel for faster loading
-            const assignedPromises = assignedModels.map(async (model) => {
+            let selectedModel = models.find(m => m.id == selectedModelId);
+            let otherModels = models.filter(m => m.id != selectedModelId);
+
+            let modelsToTest = [selectedModel, ...otherModels].filter(m => m != undefined);
+
+            let testModel = async (model: ModelConfig) => {
                 const message = {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', },
@@ -150,32 +146,24 @@ export const DataFormulatorFC = ({ }) => {
                     const response = await fetch(getUrls().TEST_MODEL, {...message });
                     const data = await response.json();
                     const status = data["status"] || 'error';
-                    dispatch(dfActions.updateModelStatus({id: model.id, status, message: data["message"] || ""}));
-                    return { model, status };
+                    return {model, status, message: data["message"] || ""};
                 } catch (error) {
-                    dispatch(dfActions.updateModelStatus({id: model.id, status: 'error', message: (error as Error).message || 'Failed to test model'}));
-                    return { model, status: 'error' };
+                    return {model, status: 'error', message: (error as Error).message || 'Failed to test model'};
                 }
-            });
-            
-            await Promise.all(assignedPromises);
-            
+            }
+
             // Then test unassigned models sequentially until one works
-            for (let model of unassignedModels) {
-                const message = {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', },
-                    body: JSON.stringify({ model }),
+            for (let model of modelsToTest) {
+                let testResult = await testModel(model);
+                dispatch(dfActions.updateModelStatus({
+                    id: model.id, 
+                    status: testResult.status, 
+                    message: testResult.message
+                }));
+                if (testResult.status == 'ok') {
+                    dispatch(dfActions.selectModel(model.id));
+                    return;
                 };
-                try {
-                    const response = await fetch(getUrls().TEST_MODEL, {...message });
-                    const data = await response.json();
-                    const status = data["status"] || 'error';
-                    dispatch(dfActions.updateModelStatus({id: model.id, status, message: data["message"] || ""}));
-                    if (status == 'ok') break;
-                } catch (error) {
-                    dispatch(dfActions.updateModelStatus({id: model.id, status: 'error', message: (error as Error).message || 'Failed to test model'}));
-                }
             }
         };
 
@@ -268,6 +256,11 @@ export const DataFormulatorFC = ({ }) => {
 
     let dataUploadRequestBox = <Box sx={{
             margin: '4px 4px 4px 8px', 
+            background: `
+                linear-gradient(90deg, ${alpha(theme.palette.text.secondary, 0.01)} 1px, transparent 1px),
+                linear-gradient(0deg, ${alpha(theme.palette.text.secondary, 0.01)} 1px, transparent 1px)
+            `,
+            backgroundSize: '16px 16px',
             width: 'calc(100vw - 16px)', overflow: 'auto', display: 'flex', flexDirection: 'column', height: '100%',
         }}>
         <Box sx={{margin:'auto', pb: '5%', display: "flex", flexDirection: "column", textAlign: "center" }}>
@@ -324,7 +317,7 @@ export const DataFormulatorFC = ({ }) => {
         <Box sx={{ display: 'block', width: "100%", height: 'calc(100% - 54px)', position: 'relative' }}>
             <DndProvider backend={HTML5Backend}>
                 {tables.length > 0 ? fixedSplitPane : dataUploadRequestBox}
-                {!noBrokenModelSlots && (
+                {selectedModelId == undefined && (
                     <Box sx={{
                         position: 'absolute',
                         top: 0,

@@ -12,31 +12,13 @@ import 'prismjs/themes/prism.css'; //Example style, you can use another
 import { useTheme } from '@mui/material/styles';
 
 import {
-    Chip,
     Card,
     Box,
-    CardContent,
     Typography,
     IconButton,
-    Button,
     TextField,
-    FormControl,
-    InputLabel,
-    SelectChangeEvent,
-    MenuItem,
-    Checkbox,
-    Menu,
-    ButtonGroup,
     Tooltip,
-    styled,
     LinearProgress,
-    Dialog,
-    FormControlLabel,
-    DialogActions,
-    DialogTitle,
-    DialogContent,
-    Divider,
-    Select,
     SxProps,
 } from '@mui/material';
 
@@ -119,24 +101,10 @@ export const ConceptCard: FC<ConceptCardProps> = function ConceptCard({ field, s
         deleteOption,
     ]
 
-    const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-    const open = Boolean(anchorEl);
-    const handleDTypeClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-        setAnchorEl(event.currentTarget);
-    };
-    const handleDTypeClose = () => {
-        setAnchorEl(null);
-    };
-
     let typeIcon = (
-        <IconButton size="small" sx={{ fontSize: "inherit", padding: "2px" }}
-            color="primary" component="span"
-            aria-controls={open ? 'basic-menu' : undefined}
-            aria-haspopup="true"
-            aria-expanded={open ? 'true' : undefined}
-        >
-            {getIconFromType(focusedTable?.metadata[field.name]?.type || Type.Auto)}
-        </IconButton>
+        <Typography sx={{ fontSize: "inherit", display: "flex", alignItems: "center", verticalAlign: "middle" }} component={'span'}>
+            {getIconFromType(focusedTable?.metadata[field.name]?.type)}
+        </Typography>
     )
 
     let fieldNameEntry = field.name != "" ? <Typography sx={{
@@ -191,108 +159,4 @@ export const ConceptCard: FC<ConceptCardProps> = function ConceptCard({ field, s
     )
 
     return cardComponent;
-}
-
-export interface ConceptFormProps {
-    concept: FieldItem,
-    handleUpdateConcept: (conept: FieldItem) => void,
-    handleDeleteConcept: (conceptID: string) => void,
-    turnOffEditMode?: () => void,
-}
-
-export interface CodexDialogBoxProps {
-    inputData: {name: string, rows: any[]},
-    outputName: string,
-    inputFields: {name: string}[],
-    initialDescription: string,
-    callWhenSubmit: (desc: string) => void,
-    handleProcessResults: (status: string, results: {code: string, content: any[]}[]) => void, // return processed cnadidates for the ease of logging
-    size: "large" | "small",
-}
-
-
-export const PyCodexDialogBox: FC<CodexDialogBoxProps> = function ({ 
-    initialDescription, inputFields, inputData, outputName, callWhenSubmit, handleProcessResults, size="small" }) {
-
-    let activeModel = useSelector(dfSelectors.getActiveModel);
-
-    let [description, setDescription] = useState(initialDescription);
-    let [requestTimeStamp, setRequestTimeStamp] = useState<number>(0);
-
-    let defaultInstruction = `Derive ${outputName} from ${inputFields.map(f => f.name).join(", ")}`;
-
-    let formulateButton = <Tooltip title="Derived the new concept">
-        <IconButton size={size}
-            disabled={description == ""}
-            sx={{ borderRadius: "10%", alignItems: "flex-end", position: 'relative' }}
-            color="primary" aria-label="Edit" component="span" onClick={() => {
-
-                setRequestTimeStamp(Date.now());
-                //setTransformCode("");
-
-                console.log(`[fyi] just sent request "${description}" at ${requestTimeStamp}`);
-
-                let message = {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', },
-                    body: JSON.stringify({
-                        token: requestTimeStamp,
-                        description: description,
-                        input_fields: inputFields,
-                        input_data: inputData,
-                        output_name: outputName,
-                        model: activeModel
-                    }),
-                };
-
-                callWhenSubmit(description);
-
-                // timeout the request after 20 seconds
-                const controller = new AbortController()
-                const timeoutId = setTimeout(() => controller.abort(), 20000)
-
-                fetch(getUrls().DERIVE_PY_CONCEPT, {...message, signal: controller.signal })
-                    .then((response) => response.json())
-                    .then((data) => {
-                        let candidates = data["results"].filter((r: any) => r["status"] == "ok");
-                        handleProcessResults(data["status"], candidates);
-                    }).catch((error) => {
-                        handleProcessResults("error", []);
-                    });
-            }}>
-            <PrecisionManufacturingIcon />
-        </IconButton>
-    </Tooltip>
-
-    let textBox = <Box key="interaction-comp" width='100%' sx={{ display: 'flex', flexDirection: "column" }}>
-        <Typography style={{ fontSize: "9px", color: "gray" }}>transformation prompt</Typography>
-        <TextField 
-            size="small"
-            sx={{fontSize: 12}}
-            color="primary"
-            fullWidth
-            disabled={outputName == ""}
-            slotProps={{
-                input: { endAdornment: formulateButton, },
-                inputLabel: { shrink: true }
-            }}
-            multiline
-            onKeyDown={(event: any) => {
-                if (event.key === "Enter" || event.key === "Tab") {
-                    // write your functionality here
-                    let target = event.target as HTMLInputElement;
-                    if (target.value == "" && target.placeholder != "") {
-                        target.value = target.placeholder;
-                        setDescription(defaultInstruction);
-                        event.preventDefault();
-                    }
-                }
-            }}
-            value={description}
-            placeholder={defaultInstruction} onChange={(event: any) => { setDescription(event.target.value) }}
-            variant="standard"  
-        />
-    </Box>
-
-    return textBox;
 }

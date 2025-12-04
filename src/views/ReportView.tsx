@@ -218,7 +218,7 @@ export const ReportView: FC = () => {
 
     const charts = useSelector((state: DataFormulatorState) => state.charts);
     const tables = useSelector((state: DataFormulatorState) => state.tables);
-    const modelSlot = useSelector((state: DataFormulatorState) => state.modelSlots);
+    const selectedModelId = useSelector((state: DataFormulatorState) => state.selectedModelId);
     const models = useSelector((state: DataFormulatorState) => state.models);
     const conceptShelfItems = useSelector((state: DataFormulatorState) => state.conceptShelfItems);
     const config = useSelector((state: DataFormulatorState) => state.config);
@@ -606,7 +606,8 @@ export const ReportView: FC = () => {
         const reportId = `report-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 
         try {
-            const model = models.find(m => m.id === modelSlot.generation);
+            let model = models.find(m => m.id == selectedModelId);
+
             if (!model) {
                 throw new Error('No model selected');
             }

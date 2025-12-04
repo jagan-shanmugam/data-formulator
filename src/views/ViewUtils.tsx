@@ -10,9 +10,8 @@ import { BooleanIcon, NumericalIcon, StringIcon, DateIcon, UnknownIcon } from '.
 
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import BarChartIcon from '@mui/icons-material/BarChart';
+import CommitIcon from '@mui/icons-material/Commit';
 
-import prettier from "prettier";
-import parserBabel from 'prettier/parser-babel';
 import { DictTable } from '../components/ComponentType';
 
 export const groupConceptItems = (conceptShelfItems: FieldItem[], tables: DictTable[])  => {
@@ -45,7 +44,7 @@ export const getIconFromType = (t: Type | undefined): JSX.Element => {
         case Type.Auto:
             return <AutoFixHighIcon fontSize="inherit" />;
     }
-    return <UnknownIcon fontSize="inherit" />;
+    return <CommitIcon sx={{opacity: 0.3}} fontSize="inherit" />;
 };
 
 export const getIconFromDtype = (t: "quantitative" | "nominal" | "ordinal" | "temporal" | "auto"): JSX.Element => {
@@ -61,5 +60,5 @@ export const getIconFromDtype = (t: "quantitative" | "nominal" | "ordinal" | "te
         case "auto":
             return <AutoFixHighIcon fontSize="inherit" />;
     }
-    return <UnknownIcon fontSize="inherit" />;
+    return <CommitIcon sx={{opacity: 0.3}} fontSize="inherit" />;
 };
