@@ -12,6 +12,7 @@ python-dotenv
 vega_datasets
 litellm
 duckdb
+pymysql
 boto3
 pyodbc
 vl-convert-python

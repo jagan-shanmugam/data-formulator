@@ -1027,6 +1027,28 @@ export const DataLoaderForm: React.FC<{
 
     let [isConnecting, setIsConnecting] = useState(false);
     let [mode, setMode] = useState<"view tables" | "query">("view tables");
+
+    // Initialize params with default values if not already set
+    React.useEffect(() => {
+        const defaultParams: Record<string, string> = {};
+        let needsUpdate = false;
+        
+        for (const paramDef of paramDefs) {
+            if (params[paramDef.name] === undefined && paramDef.default !== undefined) {
+                defaultParams[paramDef.name] = String(paramDef.default);
+                needsUpdate = true;
+            } else if (params[paramDef.name] !== undefined) {
+                defaultParams[paramDef.name] = params[paramDef.name];
+            }
+        }
+        
+        if (needsUpdate) {
+            dispatch(dfActions.updateDataLoaderConnectParams({
+                dataLoaderType,
+                params: { ...params, ...defaultParams }
+            }));
+        }
+    }, [dataLoaderType, paramDefs]);
     const toggleDisplaySamples = (tableName: string) => {
         setDisplaySamples({...displaySamples, [tableName]: !displaySamples[tableName]});
     }
@@ -1170,7 +1192,7 @@ export const DataLoaderForm: React.FC<{
                             required={paramDef.required}
                             key={paramDef.name}
                             label={paramDef.name}
-                            value={params[paramDef.name]}
+                            value={params[paramDef.name] ?? paramDef.default ?? ''}
                             placeholder={paramDef.description}
                             onChange={(event: any) => { 
                                 dispatch(dfActions.updateDataLoaderConnectParam({
