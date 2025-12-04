@@ -453,16 +453,13 @@ export const About: FC<{}> = function About({ }) {
                             How does Data Formulator handle your data?
                         </Typography>
                         <Typography 
-                            component="ul" 
                             variant="caption" 
                             sx={{ mt: 1, textAlign: 'left' }}
                         >
-                            <ul>
-                                <li>📦 <strong>Data Storage:</strong> Uploaded data (csv, xlsx, json, clipboard, messy data etc.) is stored in browser's local storage only</li>
-                                <li>⚙️ <strong>Data Processing:</strong> Local installation runs Python on your machine; online demo sends the data to server for data transformations (but not stored)</li>
-                                <li>🗄️ <strong>Database:</strong> Only available for locally installed Data Formulator (a DuckDB database file is created in temp directory to store data); not available in online demo</li>
-                                <li>🤖 <strong>LLM Endpoints:</strong> Small data samples are sent to LLM endpoints along with the prompt. Use your trusted model provider if working with private data.</li>
-                            </ul>
+                            <li><strong>Data Storage:</strong> Uploaded data (csv, xlsx, json, clipboard, messy data etc.) is stored in browser's local storage only</li>
+                            <li><strong>Data Processing:</strong> Local installation runs Python on your machine; online demo sends the data to server for data transformations (but not stored)</li>
+                            <li><strong>Database:</strong> Only available for locally installed Data Formulator (a DuckDB database file is created in temp directory to store data); not available in online demo</li>
+                            <li><strong>LLM Endpoints:</strong> Small data samples are sent to LLM endpoints along with the prompt. Use your trusted model provider if working with private data.</li>
                         </Typography>
                         <Typography variant="caption" sx={{ mt: 4, color: 'text.secondary' }}>
                             Research Prototype from Microsoft Research

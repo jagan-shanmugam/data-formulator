@@ -148,7 +148,7 @@ export const FreeDataViewFC: FC<FreeDataViewProps> = function DataView() {
 
     // Get the table ID from the focused chart
     const focusedChart = allCharts.find(c => c.id === focusedChartId);
-    const chartTableId = focusedChart?.tableRef;
+    const chartTableId = focusedChart?.tableRef || focusedTableId;
     
     const predecessorTables = getPredecessors(chartTableId);
 
@@ -162,11 +162,6 @@ export const FreeDataViewFC: FC<FreeDataViewProps> = function DataView() {
         <Box sx={{height: "100%", display: "flex", flexDirection: "column", background: "rgba(0,0,0,0.02)"}}>
 
             <Box sx={{display: 'flex', alignItems: 'center'}}>
-                <Typography sx={{display: 'flex', color: 'rgba(0,0,0,0.5)', ml: 1}} component='span'>
-                    {predecessorTables.length > 0 && (predecessorTables[predecessorTables.length - 1].derive ? 
-                        <ParkIcon sx={{ fontSize: 14, margin: 'auto'}}/> : 
-                        <AnchorIcon sx={{ fontSize: 14, margin: 'auto'}}/>)}
-                </Typography>
                 <Breadcrumbs sx={{fontSize: "12px", margin: "4px 12px"}} separator="›" aria-label="breadcrumb">
                     {predecessorTables.map(t => genTableLink(t))}
                 </Breadcrumbs>

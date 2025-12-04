@@ -687,14 +687,19 @@ export const AppFC: FC<AppFCProps> = function AppFC(appProps) {
                         {toolName}
                     </Typography>                    
                 </Button>
-                <ToggleButtonGroup
-                    value={isAboutPage ? 'about' : 'app'}
-                    exclusive
+                <Box
                     sx={{ 
                         ml: 2,
                         height: '28px', 
                         my: 'auto',
-                        '& .MuiToggleButton-root': {
+                        display: 'flex',
+                    }}
+                >
+                    <Button 
+                        component="a" 
+                        href="/about"
+                        sx={{ 
+                            textDecoration: 'none',
                             textTransform: 'none',
                             fontSize: '13px',
                             fontWeight: 400,
@@ -702,46 +707,41 @@ export const AppFC: FC<AppFCProps> = function AppFC(appProps) {
                             borderRadius: 0,
                             px: 1.5,
                             py: 0.5,
-                            color: 'text.secondary',
-                            bgColor: 'rgba(0, 0, 0, 0.02)',
+                            minWidth: 'auto',
+                            color: isAboutPage ? 'text.primary' : 'text.secondary',
+                            backgroundColor: isAboutPage ? 'rgba(0, 0, 0, 0.08)' : 'transparent',
                             '&:hover': {
                                 color: 'text.primary',
+                                backgroundColor: isAboutPage ? 'rgba(0, 0, 0, 0.08)' : 'rgba(0, 0, 0, 0.04)',
                             },
-                            '&.Mui-selected': {
-                                color: 'text.primary',
-                            },
-                            '&:first-of-type': {
-                                borderTopRightRadius: 0,
-                                borderBottomRightRadius: 0,
-                            },
-                            '&:last-of-type': {
-                                borderTopLeftRadius: 0,
-                                borderBottomLeftRadius: 0,
-                            }
-                        },
-                    }}
-                >
-                    <ToggleButton 
-                        value="about" 
-                        component="a" 
-                        href="/about"
-                        sx={{ textDecoration: 'none' }}
+                        }}
                     >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <Box component="span">About</Box>
-                        </Box>
-                    </ToggleButton>
-                    <ToggleButton 
-                        value="app" 
+                        About
+                    </Button>
+                    <Button 
                         component="a" 
                         href="/app"
-                        sx={{ textDecoration: 'none' }}
+                        sx={{ 
+                            textDecoration: 'none',
+                            textTransform: 'none',
+                            fontSize: '13px',
+                            fontWeight: 400,
+                            border: 'none',
+                            borderRadius: 0,
+                            px: 1.5,
+                            py: 0.5,
+                            minWidth: 'auto',
+                            color: !isAboutPage ? 'text.primary' : 'text.secondary',
+                            backgroundColor: !isAboutPage ? 'rgba(0, 0, 0, 0.08)' : 'transparent',
+                            '&:hover': {
+                                color: 'text.primary',
+                                backgroundColor: !isAboutPage ? 'rgba(0, 0, 0, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+                            },
+                        }}
                     >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <Box component="span">App</Box>
-                        </Box>
-                    </ToggleButton>
-                </ToggleButtonGroup>
+                        App
+                    </Button>
+                </Box>
                 {!isAboutPage && (
                     <Box sx={{ display: 'flex', ml: 'auto', fontSize: 14 }}>
                         {focusedTableId !== undefined && <React.Fragment><ToggleButtonGroup
@@ -805,6 +805,7 @@ export const AppFC: FC<AppFCProps> = function AppFC(appProps) {
                                 href="https://youtu.be/3ndlwt0Wi3c"
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                aria-label="Watch Video"
                                 sx={{ 
                                     color: 'inherit',
                                     '&:hover': {
@@ -821,6 +822,7 @@ export const AppFC: FC<AppFCProps> = function AppFC(appProps) {
                                 href="https://github.com/microsoft/data-formulator"
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                aria-label="View on GitHub"
                                 sx={{ 
                                     color: 'inherit',
                                     '&:hover': {
@@ -837,6 +839,7 @@ export const AppFC: FC<AppFCProps> = function AppFC(appProps) {
                                 href="https://pypi.org/project/data-formulator/"
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                aria-label="Pip Install"
                                 sx={{ 
                                     color: 'inherit',
                                     '&:hover': {
@@ -844,7 +847,7 @@ export const AppFC: FC<AppFCProps> = function AppFC(appProps) {
                                     }
                                 }}
                             >
-                                <Box component="img" src="/pip-logo.svg" sx={{ width: 20, height: 20 }} />
+                                <Box component="img" src="/pip-logo.svg" sx={{ width: 20, height: 20 }} alt="pip logo" />
                             </IconButton>
                         </Tooltip>
                         <Tooltip title="Join Discord">
@@ -853,6 +856,7 @@ export const AppFC: FC<AppFCProps> = function AppFC(appProps) {
                                 href="https://discord.gg/mYCZMQKYZb"
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                aria-label="Join Discord"
                                 sx={{ 
                                     color: 'inherit',
                                     '&:hover': {
