@@ -94,11 +94,16 @@ MySQL Connection Instructions:
             logger.error(f"Failed to connect to MySQL: {e}")
             raise
 
-    def _execute_query(self, query: str) -> pd.DataFrame:
-        """Execute a query using native MySQL connection and return a DataFrame."""
+    def _execute_query(self, query: str, params: tuple = None) -> pd.DataFrame:
+        """Execute a query using native MySQL connection and return a DataFrame.
+        
+        Args:
+            query: SQL query string. Use %s for parameterized queries.
+            params: Optional tuple of parameters for parameterized queries.
+        """
         try:
             with self.mysql_conn.cursor() as cursor:
-                cursor.execute(query)
+                cursor.execute(query, params)
                 rows = cursor.fetchall()
                 if rows:
                     return pd.DataFrame(rows)
@@ -139,14 +144,15 @@ MySQL Connection Instructions:
             )
 
     def list_tables(self, table_filter: str = None) -> List[Dict[str, Any]]:
-        # Get list of tables from MySQL directly
+        # Get list of tables from the connected database
+        # Filter by the specific database we're connected to for better performance
         tables_query = """
             SELECT TABLE_SCHEMA, TABLE_NAME 
             FROM information_schema.tables 
-            WHERE table_schema NOT IN ('information_schema', 'mysql', 'performance_schema', 'sys')
+            WHERE TABLE_SCHEMA = %s
             AND TABLE_TYPE = 'BASE TABLE'
         """
-        tables_df = self._execute_query(tables_query)
+        tables_df = self._execute_query(tables_query, (self.database,))
         
         if tables_df.empty:
             return []
