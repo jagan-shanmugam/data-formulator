@@ -44,12 +44,16 @@ class PostgreSQLDataLoader(ExternalDataLoader):
         if not database:
             raise ValueError("PostgreSQL database is required")
         
+        # Create a sanitized version for logging (excludes password)
+        sanitized_attach_string = f"host={host} port={port} user={user} dbname={database}"
+        
         try:
             # Install and load the Postgres extension
             self.duck_db_conn.install_extension("postgres")
             self.duck_db_conn.load_extension("postgres")
             
             # Prepare the connection string for Postgres
+            # Note: attach_string contains sensitive credentials - do not log it
             password_part = f" password={password}" if password else ""
             attach_string = f"host={host} port={port} user={user}{password_part} dbname={database}"
             
@@ -64,8 +68,9 @@ class PostgreSQLDataLoader(ExternalDataLoader):
             print(f"Successfully connected to PostgreSQL database: {database}")
             
         except Exception as e:
-            print(f"Failed to connect to PostgreSQL: {e}")
-            raise
+            # Log error with sanitized connection string to avoid exposing password
+            print(f"Failed to connect to PostgreSQL ({sanitized_attach_string}): Connection failed")
+            raise ValueError(f"Failed to connect to PostgreSQL database '{database}' on host '{host}': {type(e).__name__}")
 
     def list_tables(self):
         try:
