@@ -69,8 +69,9 @@ class PostgreSQLDataLoader(ExternalDataLoader):
             
         except Exception as e:
             # Log error with sanitized connection string to avoid exposing password
-            print(f"Failed to connect to PostgreSQL ({sanitized_attach_string}): Connection failed")
-            raise ValueError(f"Failed to connect to PostgreSQL database '{database}' on host '{host}': {type(e).__name__}")
+            error_type = type(e).__name__
+            print(f"Failed to connect to PostgreSQL ({sanitized_attach_string}): {error_type}")
+            raise ValueError(f"Failed to connect to PostgreSQL database '{database}' on host '{host}': {error_type}")
 
     def list_tables(self):
         try:

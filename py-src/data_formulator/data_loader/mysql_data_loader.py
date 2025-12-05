@@ -279,4 +279,8 @@ MySQL Connection Instructions:
 
     def __del__(self):
         """Clean up MySQL connection when the loader is destroyed."""
-        self.close()
+        try:
+            self.close()
+        except Exception:
+            # Ignore errors during destruction to prevent exceptions in garbage collection
+            pass
