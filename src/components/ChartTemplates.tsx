@@ -3,6 +3,8 @@
 
 import { ChartTemplate } from "./ComponentType";
 import InsightsIcon from '@mui/icons-material/Insights';
+import PublicIcon from '@mui/icons-material/Public';
+import PieChartOutlineIcon from '@mui/icons-material/PieChartOutline';
 import React from "react";
 
 // Import all chart icons statically so they are included in the build
@@ -322,6 +324,24 @@ const barCharts: ChartTemplate[] = [
     }
 ]
 
+const pieCharts: ChartTemplate[] = [
+    {
+        "chart": "Pie Chart",
+        "icon": <PieChartOutlineIcon color="primary" />,
+        "template": {
+            "mark": "arc",
+            "encoding": { }
+        },
+        "channels": ["theta", "color", "column", "row"],
+        "paths": {
+            "theta": ["encoding", "theta"],
+            "color": ["encoding", "color"],
+            "column": ["encoding", "column"],
+            "row": ["encoding", "row"]
+        }
+    }
+]
+
 let lineCharts = [
     {
         "chart": "Line Chart",
@@ -422,6 +442,7 @@ export const CHART_TEMPLATES : {[key: string] : ChartTemplate[]} = {
     "table": tablePlots,
     "scatter": scatterPlots,
     "bar": barCharts,
+    "pie": pieCharts,
     "line": lineCharts,
     "custom": customCharts,
 }
