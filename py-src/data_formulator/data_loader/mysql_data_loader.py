@@ -210,14 +210,23 @@ MySQL Connection Instructions:
 
         name_as = sanitize_table_name(name_as)
 
-        # Parse table name to handle schema.table format
+        # Validate and sanitize table name components
+        sanitized_size = None
+        try:
+            sanitized_size = int(size)
+            if sanitized_size <= 0:
+                raise ValueError("Size must be a positive integer.")
+        except Exception:
+            raise ValueError("Size parameter must be a positive integer.")
+
         if '.' in table_name:
             parts = table_name.split('.')
-            schema = parts[0]
-            tbl = parts[1]
-            query = f"SELECT * FROM `{schema}`.`{tbl}` LIMIT {size}"
+            schema = sanitize_table_name(parts[0])
+            tbl = sanitize_table_name(parts[1])
+            query = f"SELECT * FROM `{schema}`.`{tbl}` LIMIT {sanitized_size}"
         else:
-            query = f"SELECT * FROM `{table_name}` LIMIT {size}"
+            sanitized_table_name = sanitize_table_name(table_name)
+            query = f"SELECT * FROM `{sanitized_table_name}` LIMIT {sanitized_size}"
 
         # Fetch data from MySQL
         df = self._execute_query(query)
