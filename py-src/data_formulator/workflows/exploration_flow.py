@@ -8,7 +8,6 @@ import pandas as pd
 from typing import Dict, List, Any, Optional, Tuple, Generator
 
 from data_formulator.agents.agent_exploration import ExplorationAgent
-from data_formulator.agents.agent_interactive_explore import InteractiveExploreAgent
 from data_formulator.agents.agent_py_data_rec import PythonDataRecAgent
 from data_formulator.agents.agent_sql_data_rec import SQLDataRecAgent
 from data_formulator.agents.client_utils import Client

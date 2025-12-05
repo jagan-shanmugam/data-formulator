@@ -253,7 +253,7 @@ export const ModelSelectionButton: React.FC<{}> = ({ }) => {
                 fullWidth
                 value={newModel}
                 onChange={(event) => { setNewModel(event.target.value); }}
-                placeholder="model name"
+                placeholder="e.g., gpt-5.1"
                 error={newEndpoint != "" && !newModel}
                 slotProps={{
                     input: {
@@ -265,7 +265,7 @@ export const ModelSelectionButton: React.FC<{}> = ({ }) => {
         </TableCell>
         <TableCell align="right">
             <TextField size="small" type="text" fullWidth
-                placeholder="api_base"
+                placeholder="optional"
                 slotProps={{
                     input: {
                         style: { fontSize: "0.75rem" }
@@ -285,7 +285,7 @@ export const ModelSelectionButton: React.FC<{}> = ({ }) => {
                 }}
                 value={newApiVersion}  onChange={(event: any) => { setNewApiVersion(event.target.value); }} 
                 autoComplete='off'
-                placeholder="api_version"
+                placeholder="optional"
             />
         </TableCell>
         <TableCell align="right">
@@ -565,14 +565,7 @@ export const ModelSelectionButton: React.FC<{}> = ({ }) => {
                                 fontSize: '0.7rem'
                             }}>openai</code> provider for OpenAI-compatible APIs.
                         </Typography>
-                        <Typography variant="caption" component="div" sx={{ lineHeight: 1.6, mt: 0.5 }}>
-                            • Example configuration: <code style={{ 
-                                backgroundColor: alpha(theme.palette.text.primary, 0.05), 
-                                padding: '1px 4px', 
-                                borderRadius: 3,
-                                fontSize: '0.7rem'
-                            }}>{`{ "provider": "openai", "api_key": "sk-...", "model": "gpt-5.1", "api_base": "", "api_version": "" }`}</code>
-                        </Typography>
+                        
                     </Box>
                 </Box>
                 {modelTable}

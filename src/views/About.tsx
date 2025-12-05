@@ -188,6 +188,11 @@ export const About: FC<{}> = function About({ }) {
             overflowY: "auto",
             width: '100%',
             height: '100%',
+            background: `
+                linear-gradient(90deg, ${alpha(theme.palette.text.secondary, 0.01)} 1px, transparent 1px),
+                linear-gradient(0deg, ${alpha(theme.palette.text.secondary, 0.01)} 1px, transparent 1px)
+            `,
+            backgroundSize: '16px 16px',
         }}>
             <Box sx={{margin:'auto', pb: '5%', display: "flex", flexDirection: "column", textAlign: "center", maxWidth: 1200}}>
                 {/* Header with logo and title */}
