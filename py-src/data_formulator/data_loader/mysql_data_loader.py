@@ -282,5 +282,5 @@ MySQL Connection Instructions:
         try:
             self.close()
         except Exception:
-            # Silently ignore exceptions during garbage collection/interpreter shutdown
+            # Ignore errors during destruction to prevent exceptions in garbage collection
             pass
