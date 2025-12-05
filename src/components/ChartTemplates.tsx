@@ -324,6 +324,55 @@ const barCharts: ChartTemplate[] = [
     }
 ]
 
+const mapCharts: ChartTemplate[] = [
+    {
+        "chart": "US Map with Points",
+        "icon": <PublicIcon color="primary" />,
+        "template": {
+            "width": 500,
+            "height": 300,
+            "layer": [
+                {
+                    "data": {
+                        "url": "https://vega.github.io/vega-lite/data/us-10m.json",
+                        "format": {
+                            "type": "topojson",
+                            "feature": "states"
+                        }
+                    },
+                    "projection": {
+                        "type": "albersUsa"
+                    },
+                    "mark": {
+                        "type": "geoshape",
+                        "fill": "lightgray",
+                        "stroke": "white"
+                    }
+                },
+                {
+                    "projection": {
+                        "type": "albersUsa"
+                    },
+                    "mark": "circle",
+                    "encoding": {
+                        "longitude": { },
+                        "latitude": { },
+                        "size": {},
+                        "color": {}
+                    }
+                }
+            ]
+        },
+        "channels": ["longitude", "latitude", "color", "size"],
+        "paths": {
+            "longitude": ["layer", 1, "encoding", "longitude"],
+            "latitude": ["layer", 1, "encoding", "latitude"],
+            "color": ["layer", 1, "encoding", "color"],
+            "size": ["layer", 1, "encoding", "size"]
+        }
+    }
+]
+
 const pieCharts: ChartTemplate[] = [
     {
         "chart": "Pie Chart",
@@ -442,6 +491,7 @@ export const CHART_TEMPLATES : {[key: string] : ChartTemplate[]} = {
     "table": tablePlots,
     "scatter": scatterPlots,
     "bar": barCharts,
+    "map": mapCharts,
     "pie": pieCharts,
     "line": lineCharts,
     "custom": customCharts,
