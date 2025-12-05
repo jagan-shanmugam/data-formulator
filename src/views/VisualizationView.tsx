@@ -313,6 +313,10 @@ const VegaChartRenderer: FC<{
             true
         );
 
+        // Use "canvas" renderer for Vega charts instead of "svg".
+        // Reason: Canvas provides better performance for large datasets and complex charts,
+        // and avoids some SVG rendering issues in certain browsers. Note that this may affect
+        // accessibility and text selection. If SVG features are needed, consider reverting.
         embed('#' + elementId, { ...assembledChart }, { actions: true, renderer: "canvas" })
         .then(function (result) {
             // any post-processing of the canvas can go here
