@@ -165,25 +165,25 @@ MySQL Connection Instructions:
 
             try:
                 # Get column information from MySQL
-                columns_query = f"""
-                    SELECT COLUMN_NAME, DATA_TYPE 
-                    FROM information_schema.columns 
-                    WHERE TABLE_SCHEMA = '{schema}' AND TABLE_NAME = '{table_name}'
-                    ORDER BY ORDINAL_POSITION
-                """
-                columns_df = self._execute_query(columns_query)
+                columns_query = (
+                    "SELECT COLUMN_NAME, DATA_TYPE "
+                    "FROM information_schema.columns "
+                    "WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s "
+                    "ORDER BY ORDINAL_POSITION"
+                )
+                columns_df = self._execute_query(columns_query, (schema, table_name))
                 columns = [{
                     'name': col_row['COLUMN_NAME'],
                     'type': col_row['DATA_TYPE']
                 } for _, col_row in columns_df.iterrows()]
                 
                 # Get sample data
-                sample_query = f"SELECT * FROM `{schema}`.`{table_name}` LIMIT 10"
+                sample_query = "SELECT * FROM `{}`.`{}` LIMIT 10".format(schema, table_name)
                 sample_df = self._execute_query(sample_query)
                 sample_rows = json.loads(sample_df.to_json(orient="records", date_format='iso'))
                 
                 # Get row count
-                count_query = f"SELECT COUNT(*) as cnt FROM `{schema}`.`{table_name}`"
+                count_query = "SELECT COUNT(*) as cnt FROM `{}`.`{}`".format(schema, table_name)
                 count_df = self._execute_query(count_query)
                 row_count = int(count_df['cnt'].iloc[0]) if not count_df.empty else 0
 
