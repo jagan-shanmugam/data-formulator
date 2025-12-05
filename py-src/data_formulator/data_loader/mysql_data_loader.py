@@ -276,3 +276,11 @@ MySQL Connection Instructions:
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Support context manager exit and cleanup."""
         self.close()
+
+    def __del__(self):
+        """Clean up MySQL connection when the loader is destroyed."""
+        try:
+            self.close()
+        except Exception:
+            # Ignore errors during destruction to prevent exceptions in garbage collection
+            pass
