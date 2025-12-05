@@ -261,10 +261,18 @@ MySQL Connection Instructions:
         self.ingest_df_to_duckdb(df, sanitize_table_name(name_as))
         return df
 
-    def __del__(self):
-        """Clean up MySQL connection when the loader is destroyed."""
-        try:
-            if hasattr(self, 'mysql_conn') and self.mysql_conn:
+    def close(self):
+        """Explicitly close the MySQL connection."""
+        if hasattr(self, 'mysql_conn') and self.mysql_conn:
+            try:
                 self.mysql_conn.close()
-        except Exception:
-            pass
+            except Exception as e:
+                logger.warning(f"Error closing MySQL connection: {e}")
+
+    def __enter__(self):
+        """Support context manager entry."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Support context manager exit and cleanup."""
+        self.close()
