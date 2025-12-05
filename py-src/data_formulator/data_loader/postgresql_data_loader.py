@@ -29,15 +29,29 @@ class PostgreSQLDataLoader(ExternalDataLoader):
         self.params = params
         self.duck_db_conn = duck_db_conn
         
+        # Get params as-is from frontend
+        host = self.params.get('host', '')
+        port = self.params.get('port', '') or '5432'  # Only port has a sensible default
+        user = self.params.get('user', '')
+        database = self.params.get('database', '')
+        password = self.params.get('password', '')
+        
+        # Validate required params
+        if not host:
+            raise ValueError("PostgreSQL host is required")
+        if not user:
+            raise ValueError("PostgreSQL user is required")
+        if not database:
+            raise ValueError("PostgreSQL database is required")
+        
         try:
             # Install and load the Postgres extension
             self.duck_db_conn.install_extension("postgres")
             self.duck_db_conn.load_extension("postgres")
             
             # Prepare the connection string for Postgres
-            port = self.params.get('port', '5432')
-            password_part = f" password={self.params.get('password', '')}" if self.params.get('password') else ""
-            attach_string = f"host={self.params['host']} port={port} user={self.params['user']}{password_part} dbname={self.params['database']}"
+            password_part = f" password={password}" if password else ""
+            attach_string = f"host={host} port={port} user={user}{password_part} dbname={database}"
             
             # Detach existing postgres connection if it exists 
             try:
@@ -47,7 +61,7 @@ class PostgreSQLDataLoader(ExternalDataLoader):
 
             # Register Postgres connection
             self.duck_db_conn.execute(f"ATTACH '{attach_string}' AS mypostgresdb (TYPE postgres);")
-            print(f"Successfully connected to PostgreSQL database: {self.params['database']}")
+            print(f"Successfully connected to PostgreSQL database: {database}")
             
         except Exception as e:
             print(f"Failed to connect to PostgreSQL: {e}")

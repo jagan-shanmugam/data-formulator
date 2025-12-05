@@ -15,7 +15,6 @@ import {
     Button,
     Divider,
     IconButton,
-    Collapse,
 } from '@mui/material';
 
 import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
@@ -239,11 +238,11 @@ export const ConceptShelf: FC<ConceptShelfProps> = function ConceptShelf() {
         display: 'flex',
         flexDirection: 'row',
         flexShrink: 0, // Prevent panel from shrinking
-        width: conceptPanelOpen ? 296 : 32,
+        width: conceptPanelOpen ? 240 : 32,
         borderLeft: conceptPanelOpen ? 'none' : '1px solid',
         borderLeftColor: conceptPanelOpen ? 'transparent' : theme.palette.divider,
         pl: conceptPanelOpen ? 0 : 1,
-        transition: 'width 0.3s ease', // Smooth transition
+        transition: 'width 0.1s linear', // Smooth transition
         overflow: 'hidden',
         position: 'relative',
     }}>
@@ -296,7 +295,7 @@ export const ConceptShelf: FC<ConceptShelfProps> = function ConceptShelf() {
                     right: 0,
                     width: '100%',
                     height: '100%',
-                    background: 'rgba(255,255,255,0.8)',
+                    background: 'rgba(255,255,255,0.95)',
                     pointerEvents: 'none',
                     zIndex: 1
                 },

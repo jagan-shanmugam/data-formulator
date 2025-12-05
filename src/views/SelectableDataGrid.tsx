@@ -194,10 +194,7 @@ export const SelectableDataGrid: React.FC<SelectableDataGridProps> = ({
                                 {columnDefs.map((columnDef, index) => {
                                     let backgroundColor = "white";
                                     let borderBottomColor = theme.palette.primary.main;
-                                    if (columnDef.source == "derived") {
-                                        backgroundColor = alpha(theme.palette.derived.main, 0.05);
-                                        borderBottomColor = theme.palette.derived.main;
-                                    } else if (columnDef.source == "custom") {
+                                    if (columnDef.source == "custom") {
                                         backgroundColor = alpha(theme.palette.custom.main, 0.05);
                                         borderBottomColor = theme.palette.custom.main;
                                     } else {
@@ -260,9 +257,7 @@ export const SelectableDataGrid: React.FC<SelectableDataGridProps> = ({
                             <>
                                 {columnDefs.map((column, colIndex) => {
                                     let backgroundColor = "white";
-                                    if (column.source == "derived") {
-                                        backgroundColor = alpha(theme.palette.derived.main, 0.05);
-                                    } else if (column.source == "custom") {
+                                    if (column.source == "custom") {
                                         backgroundColor = alpha(theme.palette.custom.main, 0.05);
                                     } else {
                                         backgroundColor = "rgba(255,255,255,0.05)";
@@ -284,10 +279,10 @@ export const SelectableDataGrid: React.FC<SelectableDataGridProps> = ({
                 />
                 </Box>
             </Fade>
-            <Paper className="table-footer-container" variant="outlined"
+            <Paper variant="outlined"
                 sx={{ display: 'flex', flexDirection: 'row',  position: 'absolute', bottom: 6, right: 12 }}>
                 <Box sx={{display: 'flex', alignItems: 'center', mx: 1}}>
-                    <Typography  minHeight={32} className="table-footer-number" sx={{display: 'flex', alignItems: 'center'}}>
+                    <Typography sx={{display: 'flex', alignItems: 'center', fontSize: '12px'}}>
                         {virtual && <CloudQueueIcon sx={{fontSize: 16, mr: 1}}/> }
                         {`${rowCount} rows`}
                     </Typography>
@@ -303,7 +298,6 @@ export const SelectableDataGrid: React.FC<SelectableDataGridProps> = ({
                             >
                                 <CasinoIcon sx={{
                                     fontSize: 18, 
-                                    transition: 'transform 0.5s ease-in-out',
                                     '&:hover': {
                                         transform: 'rotate(180deg)'
                                     }
@@ -311,35 +305,6 @@ export const SelectableDataGrid: React.FC<SelectableDataGridProps> = ({
                             </IconButton>
                         </Tooltip>
                     )}
-                    {!virtual && <Tooltip title={`Download ${tableName} as CSV`}>
-                        <IconButton size="small" color="primary" 
-                            onClick={() => {
-                                // Create CSV content
-                                const csvContent = [
-                                    Object.keys(rows[0]).join(','), // Header row
-                                    ...rows.map(row => Object.values(row).map(value => 
-                                        // Handle values that need quotes (contain commas or quotes)
-                                        typeof value === 'string' && (value.includes(',') || value.includes('"')) 
-                                            ? `"${value.replace(/"/g, '""')}"` 
-                                            : value
-                                    ).join(','))
-                                ].join('\n');
-
-                                // Create and trigger download
-                                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                                const link = document.createElement('a');
-                                const url = URL.createObjectURL(blob);
-                                link.setAttribute('href', url);
-                                link.setAttribute('download', `${tableName}.csv`);
-                                link.style.visibility = 'hidden';
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
-                            }}
-                        >
-                            <FileDownloadIcon sx={{fontSize: 18}} />
-                        </IconButton>
-                    </Tooltip>}
                 </Box>
             </Paper>
         </Box >

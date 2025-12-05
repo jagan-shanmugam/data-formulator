@@ -169,7 +169,7 @@ export const ExportStateButton: React.FC<{}> = ({ }) => {
         // Fields to exclude from serialization
         const excludedFields = new Set([
             'models',
-            'modelSlots', 
+            'selectedModelId',
             'testedModels',
             'dataLoaderConnectParams',
             'sessionId',
@@ -221,7 +221,19 @@ export interface AppFCProps {
 // Extract menu components into separate components to prevent full app re-renders
 const TableMenu: React.FC = () => {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const [openDialog, setOpenDialog] = useState<'database' | 'extract' | 'paste' | 'upload' | null>(null);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
     const open = Boolean(anchorEl);
+
+    const handleOpenDialog = (dialog: 'database' | 'extract' | 'paste' | 'upload') => {
+        setAnchorEl(null);
+        if (dialog === 'upload') {
+            // For file upload, trigger the hidden file input
+            fileInputRef.current?.click();
+        } else {
+            setOpenDialog(dialog);
+        }
+    };
     
     return (
         <>
@@ -246,40 +258,48 @@ const TableMenu: React.FC = () => {
                 }}
                 aria-labelledby="add-table-button"
                 sx={{ 
-                    '& .MuiMenuItem-root': { padding: 0, margin: 0 } ,
-                    '& .MuiTypography-root': { fontSize: 14, display: 'flex', alignItems: 'center', textTransform: 'none',gap: 1 }
+                    '& .MuiMenuItem-root': { padding: '4px 8px' },
+                    '& .MuiTypography-root': { fontSize: 14, display: 'flex', alignItems: 'center', textTransform: 'none', gap: 1 }
                 }}
             >
-                <MenuItem onClick={(e) => {}}>
-                    <DBTableSelectionDialog buttonElement={
-                        <Typography fontSize="inherit" sx={{  }}>
-                            <CloudQueueIcon fontSize="inherit" /> Database
-                        </Typography>
-                    } />
+                <MenuItem onClick={() => handleOpenDialog('database')}>
+                    <Typography fontSize="inherit">
+                        connect to database <CloudQueueIcon fontSize="inherit" /> 
+                    </Typography>
                 </MenuItem>
-                <MenuItem onClick={(e) => {}}>     
-                    <DataLoadingChatDialog buttonElement={<Typography fontSize="inherit" sx={{  }}>
-                        clean data <span style={{fontSize: '11px'}}>(image/messy text)</span>
-                    </Typography>}/>
+                <MenuItem onClick={() => handleOpenDialog('extract')}>
+                    <Typography fontSize="inherit">
+                        extract data <span style={{fontSize: '11px'}}>(image/messy text)</span>
+                    </Typography>
                 </MenuItem>
-                <MenuItem onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }}>
-                    <TableCopyDialogV2 buttonElement={
-                        <Typography sx={{  }}>
-                            paste data <span style={{fontSize: '11px'}}>(csv/tsv)</span>
-                        </Typography>
-                    } disabled={false} />
+                <MenuItem onClick={() => handleOpenDialog('paste')}>
+                    <Typography>
+                        paste data <span style={{fontSize: '11px'}}>(csv/tsv)</span>
+                    </Typography>
                 </MenuItem>
-                <MenuItem onClick={(e) => {}} >
-                    <TableUploadDialog buttonElement={
-                        <Typography sx={{ }}>
-                            upload data file <span style={{fontSize: '11px'}}>(csv/tsv/json)</span>
-                        </Typography>
-                    } disabled={false} />
+                <MenuItem onClick={() => handleOpenDialog('upload')}>
+                    <Typography>
+                        upload data file <span style={{fontSize: '11px'}}>(csv/tsv/json)</span>
+                    </Typography>
                 </MenuItem>
             </Menu>
+            
+            {/* Dialogs rendered outside the Menu to avoid keyboard event issues */}
+            <DBTableSelectionDialog 
+                open={openDialog === 'database'} 
+                onClose={() => setOpenDialog(null)} 
+            />
+            <DataLoadingChatDialog 
+                open={openDialog === 'extract'} 
+                onClose={() => setOpenDialog(null)} 
+            />
+            <TableCopyDialogV2 
+                open={openDialog === 'paste'} 
+                onClose={() => setOpenDialog(null)} 
+            />
+            <TableUploadDialog 
+                fileInputRef={fileInputRef}
+            />
         </>
     );
 };
@@ -667,14 +687,19 @@ export const AppFC: FC<AppFCProps> = function AppFC(appProps) {
                         {toolName}
                     </Typography>                    
                 </Button>
-                <ToggleButtonGroup
-                    value={isAboutPage ? 'about' : 'app'}
-                    exclusive
+                <Box
                     sx={{ 
                         ml: 2,
                         height: '28px', 
                         my: 'auto',
-                        '& .MuiToggleButton-root': {
+                        display: 'flex',
+                    }}
+                >
+                    <Button 
+                        component="a" 
+                        href="/about"
+                        sx={{ 
+                            textDecoration: 'none',
                             textTransform: 'none',
                             fontSize: '13px',
                             fontWeight: 400,
@@ -682,50 +707,43 @@ export const AppFC: FC<AppFCProps> = function AppFC(appProps) {
                             borderRadius: 0,
                             px: 1.5,
                             py: 0.5,
-                            color: 'text.secondary',
-                            bgColor: 'rgba(0, 0, 0, 0.02)',
+                            minWidth: 'auto',
+                            color: isAboutPage ? 'text.primary' : 'text.secondary',
+                            backgroundColor: isAboutPage ? 'rgba(0, 0, 0, 0.08)' : 'transparent',
                             '&:hover': {
                                 color: 'text.primary',
+                                backgroundColor: isAboutPage ? 'rgba(0, 0, 0, 0.08)' : 'rgba(0, 0, 0, 0.04)',
                             },
-                            '&.Mui-selected': {
-                                color: 'text.primary',
-                            },
-                            '&:first-of-type': {
-                                borderTopRightRadius: 0,
-                                borderBottomRightRadius: 0,
-                            },
-                            '&:last-of-type': {
-                                borderTopLeftRadius: 0,
-                                borderBottomLeftRadius: 0,
-                            }
-                        },
-                    }}
-                >
-                    <ToggleButton 
-                        value="about" 
-                        component="a" 
-                        href="/about"
-                        sx={{ textDecoration: 'none' }}
+                        }}
                     >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <Box component="span">About</Box>
-                        </Box>
-                    </ToggleButton>
-                    <ToggleButton 
-                        value="app" 
+                        About
+                    </Button>
+                    <Button 
                         component="a" 
                         href="/app"
-                        sx={{ textDecoration: 'none' }}
+                        sx={{ 
+                            textDecoration: 'none',
+                            textTransform: 'none',
+                            fontSize: '13px',
+                            fontWeight: 400,
+                            border: 'none',
+                            borderRadius: 0,
+                            px: 1.5,
+                            py: 0.5,
+                            minWidth: 'auto',
+                            color: !isAboutPage ? 'text.primary' : 'text.secondary',
+                            backgroundColor: !isAboutPage ? 'rgba(0, 0, 0, 0.08)' : 'transparent',
+                            '&:hover': {
+                                color: 'text.primary',
+                                backgroundColor: !isAboutPage ? 'rgba(0, 0, 0, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+                            },
+                        }}
                     >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <Box component="span">App</Box>
-                        </Box>
-                    </ToggleButton>
-                </ToggleButtonGroup>
+                        App
+                    </Button>
+                </Box>
                 {!isAboutPage && (
-                    <Box sx={{ display: 'flex', ml: 'auto', fontSize: 14, mr: 1, px: 0.5,
-                                backgroundColor: alpha(theme.palette.primary.main, 0.02),
-                                borderRadius: 4}}>
+                    <Box sx={{ display: 'flex', ml: 'auto', fontSize: 14 }}>
                         {focusedTableId !== undefined && <React.Fragment><ToggleButtonGroup
                             value={viewMode}
                             exclusive
@@ -738,53 +756,24 @@ export const AppFC: FC<AppFCProps> = function AppFC(appProps) {
                                 mr: 2,
                                 height: '28px', 
                                 my: 'auto',
-                                borderRadius: 2,
-                                border: '1px solid rgba(0, 0, 0, 0.1)',
-                                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
                                 '& .MuiToggleButton-root': {
                                     textTransform: 'none',
-                                    fontSize: '14px',
                                     fontWeight: 500,
                                     border: 'none',
-                                    borderRadius: 1,
-                                    px: 1,
-                                    py: 0.5,
                                     '&:hover': {
                                         backgroundColor: 'rgba(0, 0, 0, 0.04)',
                                         color: 'text.primary',
-                                    },
-                                    '&.Mui-selected': {
-                                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                                        color: theme.palette.primary.main,
-                                    },
-                                    '&:first-of-type': {
-                                        borderTopRightRadius: 0,
-                                        borderBottomRightRadius: 0,
-                                    },
-                                    '&:last-of-type': {
-                                        borderTopLeftRadius: 0,
-                                        borderBottomLeftRadius: 0,
-                                    }
-                                },
-                                '.mode-icon': {
-                                    animation: 'pulse 3s ease-out infinite',
-                                    '@keyframes pulse': {
-                                        '0%, 80%': { transform: 'scale(1)' },
-                                        '90%': { transform: 'scale(1.3)' },
-                                        '100%': { transform: 'scale(1)' },
                                     },
                                 },
                             }}
                         >
                             <ToggleButton value="editor">
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Box className={viewMode === 'report' ? 'mode-icon' : ''} component="span" sx={{ fontSize: '12px' }}>🔍</Box>
                                     <Box component="span">Explore</Box>
                                 </Box>
                             </ToggleButton>
                             <ToggleButton value="report">
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Box className={viewMode === 'editor' ? 'mode-icon' : ''} component="span" sx={{ fontSize: '12px' }}>✏️</Box>
                                     <Box component="span">
                                         {generatedReports.length > 0 ? `Reports (${generatedReports.length})` : 'Reports'}
                                     </Box>
@@ -816,6 +805,7 @@ export const AppFC: FC<AppFCProps> = function AppFC(appProps) {
                                 href="https://youtu.be/3ndlwt0Wi3c"
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                aria-label="Watch Video"
                                 sx={{ 
                                     color: 'inherit',
                                     '&:hover': {
@@ -832,6 +822,7 @@ export const AppFC: FC<AppFCProps> = function AppFC(appProps) {
                                 href="https://github.com/microsoft/data-formulator"
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                aria-label="View on GitHub"
                                 sx={{ 
                                     color: 'inherit',
                                     '&:hover': {
@@ -848,6 +839,7 @@ export const AppFC: FC<AppFCProps> = function AppFC(appProps) {
                                 href="https://pypi.org/project/data-formulator/"
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                aria-label="Pip Install"
                                 sx={{ 
                                     color: 'inherit',
                                     '&:hover': {
@@ -855,7 +847,7 @@ export const AppFC: FC<AppFCProps> = function AppFC(appProps) {
                                     }
                                 }}
                             >
-                                <Box component="img" src="/pip-logo.svg" sx={{ width: 20, height: 20 }} />
+                                <Box component="img" src="/pip-logo.svg" sx={{ width: 20, height: 20 }} alt="pip logo" />
                             </IconButton>
                         </Tooltip>
                         <Tooltip title="Join Discord">
@@ -864,6 +856,7 @@ export const AppFC: FC<AppFCProps> = function AppFC(appProps) {
                                 href="https://discord.gg/mYCZMQKYZb"
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                aria-label="Join Discord"
                                 sx={{ 
                                     color: 'inherit',
                                     '&:hover': {
@@ -914,24 +907,6 @@ export const AppFC: FC<AppFCProps> = function AppFC(appProps) {
             </Box>
         }
     ]);
-
-    let footer = <Box sx={{ zIndex: 0, position: 'absolute', bottom: 0, left: 0, right: 0, color: 'text.secondary', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Button size="small" color="inherit" 
-                sx={{ textTransform: 'none'}} 
-                target="_blank" rel="noopener noreferrer" 
-                href="https://www.microsoft.com/en-us/privacy/privacystatement">Privacy & Cookies</Button>
-        <Divider orientation="vertical" variant="middle" flexItem sx={{ mx: 1 }} />
-        <Button size="small" color="inherit" 
-                sx={{ textTransform: 'none'}} 
-                target="_blank" rel="noopener noreferrer" 
-                href="Microsoft Azure Website Terms of Use">Terms of Use</Button>
-        <Divider orientation="vertical" variant="middle" flexItem sx={{ mx: 1 }} />
-        <Button size="small" color="inherit" 
-                sx={{ textTransform: 'none'}} 
-                target="_blank" rel="noopener noreferrer" 
-                href="https://github.com/microsoft/data-formulator/issues">Contact Us</Button>
-        <Typography sx={{ display: 'inline', fontSize: '12px', ml: 1 }}>@ {new Date().getFullYear()}</Typography>
-    </Box>
 
     let app =
         <Box sx={{ 
