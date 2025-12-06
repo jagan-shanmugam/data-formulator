@@ -67,54 +67,42 @@ Given a dataset (or a thread of datasets that have been explored), your task is 
 * when the exploration context is provided, make your suggestion based on the context as well as the original dataset; otherwise leverage the original dataset to suggest questions.
 
 Guidelines for question suggestions:
-1. Suggest a list of question_groups of interesting analytical questions that are not obvious that can uncover nontrivial insights, including both breadth and depth questions.
-    
+1. Suggest a list of question_groups of interesting analytical questions that are not obvious that can uncover nontrivial insights.
 2. Use a diverse language style to display the questions (can be questions, statements etc)
 3. If there are multiple datasets in a thread, consider relationships between them
 4. CONCISENESS: the questions should be concise and to the point
 5. QUESTION GROUP GENERATION: 
     - different questions groups should cover different aspects of the data analysis for user to choose from.
-    - each question_group should include both 'breadth_questions' and 'depth_questions':
-        - breadth_questions: a group of questions that are all relatively simple that helps the user understand the data in a broad sense.
-        - depth_questions: a sequence of questions that build on top of each other to answer a specific aspect of the user's goal.
-    - you have a budget of generating 4 questions in total (or as directed by the user).
-        - allocate 2-3 questions to 'breadth_questions' and 2-3 questions to 'depth_questions' based on the user's goal and the data.
-        - each question group should slightly lean towards 'breadth' or 'depth' exploration, but not too much.
-        - the more focused area can have more questions than the other area.
+    - each question_group is a sequence of 'questions' that builds on top of each other to answer the user's goal.
     - each question group should have a difficulty level (easy / medium / hard),
         - simple questions should be short -- single sentence exploratory questions
         - medium questions can be 1-2 sentences exploratory questions
         - hard questions should introduce some new analysis concept but still make it concise
     - if suitable, include a group of questions that are related to statistical analysis: forecasting, regression, or clustering.
 6. QUESTIONS WITHIN A QUESTION GROUP:
-    - all questions should be a new question based on the thread of exploration the user provided, do not repeat questions that have already been explored in the thread
+    - raise new questions that are related to the user's goal, do not repeat questions that have already been explored in the context provided to you.
     - if the user provides a start question, suggested questions should be related to the start question.
-    - when suggesting 'breadth_questions' in a question_group, they should be a group of questions:
-        - they are related to the user's goal, they should each explore a different aspect of the user's goal in parallel.
-        - questions should consider different fields, metrics and statistical methods.
-        - each question within the group should be distinct from each other that they will lead to different insights and visualizations
-    - when suggesting 'depth_questions' in a question_group, they should be a sequence of questions:
-        - start of the question should provide an overview of the data in the direction going to be explored, and it will be refined in the subsequent questions.
-        - they progressively dive deeper into the data, building on top of the previous question.
-        - each question should be related to the previous question, introducing refined analysis (e.g., updated computation, filtering, different grouping, etc.)
+    - the questions should progressively dive deeper into the data, building on top of the previous question.
+        - start of the question should provide an overview of the data in the direction going to be explored.
+        - followup questions should refine the previous question, introducing refined analysis to deep dive into the data (e.g., updated computation, filtering, different grouping, etc.)
+        - don't jump too far from the previous question so that readers can understand the flow of the questions.
     - every question should be answerable with a visualization.
 7. FORMATTING: 
-    - include "breadth_questions" and "depth_questions" in the question group:
-        - each question group should have 2-3 questions (or as directed by the user).
+    - include "questions" in the question group:
+        - each question group should have 2-4 questions (or as directed by the user).
     - For each question group, include a 'goal' that summarizes the goal of the question group. 
         - The goal should all be a short single sentence (<12 words).
         - Meaning of the 'goal' should be clear that the user won't misunderstand the actual question descibed in 'text'.
         - It should capture the key computation and exploration direction of the question (do not omit any information that may lead to ambiguity), but also keep it concise.
         - include the **bold** keywords for the attributes / metrics that are important to the question, especially when the goal mentions fields / metrics in the original dataset (don't have to be exact match)
     - include 'difficulty' to indicate the difficulty of the question, it should be one of 'easy', 'medium', 'hard'
-    - a 'focus' field to indicate whether the overall question group leans more on 'breadth' or 'depth' exploration.
 
 Output should be a list of json objects in the following format, each line should be a json object representing a question group, starting with 'data: ':
 
 Format:
 
-data: {"breadth_questions": [...], "depth_questions": [...], "goal": ..., "difficulty": ..., "focus": "..."} 
-data: {"breadth_questions": [...], "depth_questions": [...], "goal": ..., "difficulty": ..., "focus": "..."} 
+data: {"questions": [...], "goal": ..., "difficulty": ...} 
+data: {"questions": [...], "goal": ..., "difficulty": ...} 
 ... // more question groups
 '''
 

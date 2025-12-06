@@ -220,13 +220,11 @@ export const IdeaChip: FC<{
                 height: 'auto',
                 borderRadius: 2,
                 border: `1px solid ${alpha(styleColor, 0.2)}`,
-                boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                transition: 'all 0.2s ease-in-out',
+                transition: 'all 0.1s ease-in-out',
                 backgroundColor: alpha(theme.palette.background.paper, 0.9),
                 cursor: disabled ? 'default' : 'pointer',
                 opacity: disabled ? 0.6 : 1,
                 '&:hover': disabled ? 'none' : {
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
                     borderColor: alpha(styleColor, 0.7),
                     transform: 'translateY(-1px)',
                 },
@@ -243,7 +241,7 @@ export const IdeaChip: FC<{
 
 export const AgentIdeaChip: FC<{
     mini?: boolean,
-    idea: {breadth_questions: string[], depth_questions: string[], goal: string, difficulty: 'easy' | 'medium' | 'hard', focus: 'breadth' | 'depth'} 
+    idea: {questions: string[], goal: string, difficulty: 'easy' | 'medium' | 'hard'} 
     theme: Theme, 
     onClick: () => void, 
     sx?: SxProps,
@@ -288,13 +286,11 @@ export const AgentIdeaChip: FC<{
                 height: 'auto',
                 borderRadius: 2,
                 border: `1px solid ${alpha(styleColor, 0.2)}`,
-                boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                transition: 'all 0.2s ease-in-out',
+                transition: 'all 0.1s ease-in-out',
                 backgroundColor: alpha(theme.palette.background.paper, 0.9),
                 cursor: disabled ? 'default' : 'pointer',
                 opacity: disabled ? 0.6 : 1,
                 '&:hover': disabled ? 'none' : {
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
                     borderColor: alpha(styleColor, 0.7),
                     transform: 'translateY(-1px)',
                 },
@@ -302,8 +298,7 @@ export const AgentIdeaChip: FC<{
             }}
             onClick={disabled ? undefined : onClick}
         >
-            {idea.focus === 'breadth' && <CallSplitIcon sx={{color: getDifficultyColor(idea.difficulty), fontSize: 18, mr: 0.5, transform: 'rotate(90deg)'}} />}
-            {idea.focus === 'depth' && <MovingIcon sx={{color: getDifficultyColor(idea.difficulty), fontSize: 18, mr: 0.5, transform: 'rotate(90deg)'}} />}
+            <MovingIcon sx={{color: getDifficultyColor(idea.difficulty), fontSize: 18, mr: 0.5, transform: 'rotate(90deg)'}} />
             <Typography component="div" sx={{ fontSize: '11px', color: getDifficultyColor(idea.difficulty || 'medium') }}>
                 {ideaTextComponent}
             </Typography>
@@ -348,9 +343,9 @@ export const ChartRecBox: FC<ChartRecBoxProps> = function ({ tableId, placeHolde
     const [ideas, setIdeas] = useState<{text: string, goal: string, difficulty: 'easy' | 'medium' | 'hard'}[]>([]);
     
     const [agentIdeas, setAgentIdeas] = useState<{
-        breadth_questions: string[], depth_questions: string[], goal: string, 
-        difficulty: 'easy' | 'medium' | 'hard', 
-        focus: 'breadth' | 'depth' }[]>([]);
+        questions: string[], goal: string, 
+        difficulty: 'easy' | 'medium' | 'hard' }[]>([]);
+
     const [thinkingBuffer, setThinkingBuffer] = useState<string>("");
 
     let thinkingBufferEffect = <ThinkingBufferEffect text={thinkingBuffer.slice(-60)} sx={{ width: '46%' }} />;
@@ -465,29 +460,18 @@ export const ChartRecBox: FC<ChartRecBoxProps> = function ({ tableId, placeHolde
 
                 if (mode === "agent") {
                     let questions = dataBlocks.map(block => ({
-                        breadth_questions: block.breadth_questions,
-                        depth_questions: block.depth_questions,
+                        questions: block.questions,
                         goal: block.goal,
-                        difficulty: block.difficulty,
-                        focus: block.focus
+                        difficulty: block.difficulty
                     }));
                     const newIdeas = questions.map((question: any) => ({
-                        breadth_questions: question.breadth_questions,
-                        depth_questions: question.depth_questions,
+                        questions: question.questions,
                         goal: question.goal,
-                        difficulty: question.difficulty,
-                        focus: question.focus
+                        difficulty: question.difficulty
                     }));
                     if (runNextIdea) {
                         runNextIdea = false;
-                        for (let i = 1; i < newIdeas[0].breadth_questions.length; i++) {
-                            setTimeout(() => {
-                                deriveDataFromNL(newIdeas[0].breadth_questions[i]);
-                            }, i + 1 * 1000);
-                        }
-                        setTimeout(() => {
-                            exploreDataFromNL(newIdeas[0].depth_questions);
-                        }, newIdeas[0].breadth_questions.length + 1 * 1000);
+                        exploreDataFromNL(newIdeas[0].questions);
                     }
                     setAgentIdeas(newIdeas);
                 } else {
@@ -1189,8 +1173,9 @@ export const ChartRecBox: FC<ChartRecBoxProps> = function ({ tableId, placeHolde
 
     const showTableSelector = availableTables.length > 1 && currentTable;
 
+    
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', ...sx }}>
+        <Box sx={{ maxWidth: "600px", display: 'flex', flexDirection: 'column', ...sx }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <ButtonGroup
                     size="small"
@@ -1229,30 +1214,13 @@ export const ChartRecBox: FC<ChartRecBoxProps> = function ({ tableId, placeHolde
                 </ButtonGroup>
             </Box>
             <Card variant='outlined' sx={{ 
-                padding: 2, 
-                maxWidth: "600px", 
+                px: 2, 
                 display: 'flex', 
                 flexDirection: 'column',
                 gap: 1,
                 position: 'relative',
-                borderColor: alpha(modeColor, 0.5),
-                animation: mode === "agent" ? 'glowAgent 2s ease-in-out infinite alternate' : 'glowInteractive 2s ease-in-out infinite alternate',
-                '@keyframes glowAgent': {
-                    '0%': {
-                        boxShadow: `0 0 5px 0 ${alpha(modeColorMap['agent'], 0.1)}`,
-                    },
-                    '100%': {
-                        boxShadow: `0 0 10px 0 ${alpha(modeColorMap['agent'], 0.3)}, 0 0 10px 0 ${alpha(modeColorMap['agent'], 0.3)}`,
-                    }
-                },
-                '@keyframes glowInteractive': {
-                    '0%': {
-                        boxShadow: `0 0 5px 0 ${alpha(modeColorMap['interactive'], 0.1)}`,
-                    },
-                    '100%': {
-                        boxShadow: `0 0 10px 0 ${alpha(modeColorMap['interactive'], 0.3)}, 0 0 10px 0 ${alpha(modeColorMap['interactive'], 0.3)}`,
-                    }
-                }
+                borderWidth: 1.5,
+                borderColor: alpha(modeColor, 0.8),
             }}>
                 {isFormulating && (
                     <LinearProgress 
@@ -1283,6 +1251,7 @@ export const ChartRecBox: FC<ChartRecBoxProps> = function ({ tableId, placeHolde
 
                 <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, alignItems: 'flex-end' }}>
                     <TextField
+                        variant="standard"
                         sx={{
                             flex: 1,
                             "& .MuiInputLabel-root": { fontSize: '14px' },
@@ -1291,12 +1260,19 @@ export const ChartRecBox: FC<ChartRecBoxProps> = function ({ tableId, placeHolde
                             },
                             "& .MuiInput-input": { fontSize: '14px' },
                             "& .MuiInput-underline:before": {
+                                borderBottom: 'none',
                                 borderBottomColor: alpha(modeColor, 0.42)
                             },
                             "& .MuiInput-underline:hover:not(.Mui-disabled):before": {
+                                borderBottom: 'none',
+                                borderBottomColor: modeColor
+                            },
+                            "& .MuiInput-underline:hover:(.Mui-disabled):before": {
+                                borderBottom: 'none',
                                 borderBottomColor: modeColor
                             },
                             "& .MuiInput-underline:after": {
+                                borderBottom: 'none',
                                 borderBottomColor: modeColor
                             }
                         }}
@@ -1335,13 +1311,12 @@ export const ChartRecBox: FC<ChartRecBoxProps> = function ({ tableId, placeHolde
                             }
                         }}
                         value={prompt}
-                        label={mode === "agent" ? "Where should the agent go?" : "What do you want to explore?"}
+                        // label={mode === "agent" ? "Where should the agent go?" : "What do you want to explore?"}
                         placeholder={`${getQuestion()}`}
                         fullWidth
                         multiline
-                        variant="standard"
                         maxRows={4}
-                        minRows={1}
+                        minRows={2}
                     />
                     {<Divider orientation="vertical" flexItem />}
                     {<Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 0.5, my: 1}}>
@@ -1383,80 +1358,61 @@ export const ChartRecBox: FC<ChartRecBoxProps> = function ({ tableId, placeHolde
                         </Tooltip>
                     </Box>}
                 </Box>
-                {/* Ideas Chips Section */}
-                {mode === 'interactive' && (ideas.length > 0 || thinkingBuffer) && (
-                    <Box>
-                       {ideas.length > 0 && ( <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, marginBottom: 1 }}>
-                            <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
-                                ideas
-                            </Typography>
-                        </Box>)}
-                        <Box sx={{
-                            display: 'flex', 
-                            flexWrap: 'wrap', 
-                            gap: 0.5,
-                        }}>
-                            {ideas.map((idea, index) => (
-                                <IdeaChip
-                                    mini
-                                    key={index}
-                                    idea={idea}
-                                    theme={theme}
-                                    onClick={() => {
-                                        focusNextChartRef.current = true;
-                                        setPrompt(idea.text);
-                                        deriveDataFromNL(idea.text);
-                                    }}
-                                    disabled={isFormulating}
-                                    sx={{
-                                        width: '46%',
-                                    }}
-                                />
-                            ))}
-                            {isLoadingIdeas && thinkingBuffer && thinkingBufferEffect}
-                        </Box>
-                    </Box>
-                )}
-                {mode === 'agent' && (agentIdeas.length > 0 || thinkingBuffer) && (
-                    <Box>
-                        {agentIdeas.length > 0 && <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, marginBottom: 1 }}>
-                            <Typography sx={{ fontSize: 12, color: "text.secondary", ".MuiSvgIcon-root": { cursor: 'help', transform: 'rotate(90deg)', verticalAlign: 'middle', fontSize: 12} }}>
-                                directions <Tooltip title="deep dive"><MovingIcon /></Tooltip>  <Tooltip title="branch"><CallSplitIcon /></Tooltip>
-                            </Typography>
-                        </Box>}
-                        <Box sx={{
-                            display: 'flex', 
-                            flexWrap: 'wrap', 
-                            gap: 0.5,
-                            marginBottom: 1,
-                        }}>
-                            {agentIdeas.map((idea, index) => (
-                                <AgentIdeaChip
-                                    mini
-                                    key={index}
-                                    idea={idea}
-                                    theme={theme}
-                                    onClick={() => {
-                                        focusNextChartRef.current = true;
-                                        exploreDataFromNL(idea.depth_questions);
-                                        idea.breadth_questions.forEach((question, index) => {
-                                            setTimeout(() => {
-                                                setPrompt(question);
-                                                deriveDataFromNL(question);
-                                            }, (index + 1) * 1000); // 1000ms delay between each call
-                                        });
-                                    }}
-                                    disabled={isFormulating}
-                                    sx={{
-                                        width: '46%',
-                                    }}
-                                />
-                            ))}
-                            {isLoadingIdeas && thinkingBuffer && thinkingBufferEffect}
-                        </Box>
-                    </Box>
-                )}
             </Card>
+            {mode === 'interactive' && (ideas.length > 0 || thinkingBuffer) && (
+                <Box sx={{
+                    display: 'flex', 
+                    flexWrap: 'wrap', 
+                    gap: 0.5,
+                    py: 1,
+                }}>
+                    {ideas.map((idea, index) => (
+                        <IdeaChip
+                            mini
+                            key={index}
+                            idea={idea}
+                            theme={theme}
+                            onClick={() => {
+                                focusNextChartRef.current = true;
+                                setPrompt(idea.text);
+                                deriveDataFromNL(idea.text);
+                            }}
+                            disabled={isFormulating}
+                            sx={{
+                                width: 'calc(50% - 16px)',
+                            }}
+                        />
+                    ))}
+                    {isLoadingIdeas && thinkingBuffer && thinkingBufferEffect}
+                </Box>
+            )}
+            {mode === 'agent' && (agentIdeas.length > 0 || thinkingBuffer) && (
+                <Box sx={{
+                    display: 'flex', 
+                    flexWrap: 'wrap', 
+                    gap: 0.5,
+                    marginBottom: 1,
+                    py: 1,
+                }}>
+                    {agentIdeas.map((idea, index) => (
+                        <AgentIdeaChip
+                            mini
+                            key={index}
+                            idea={idea}
+                            theme={theme}
+                            onClick={() => {
+                                focusNextChartRef.current = true;
+                                exploreDataFromNL(idea.questions);
+                            }}
+                            disabled={isFormulating}
+                            sx={{
+                                width: 'calc(50% - 16px)',
+                            }}
+                        />
+                    ))}
+                    {isLoadingIdeas && thinkingBuffer && thinkingBufferEffect}
+                </Box>
+            )}
         </Box>
     );
 };
