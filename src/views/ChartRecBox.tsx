@@ -1261,19 +1261,15 @@ export const ChartRecBox: FC<ChartRecBoxProps> = function ({ tableId, placeHolde
                             "& .MuiInput-input": { fontSize: '14px' },
                             "& .MuiInput-underline:before": {
                                 borderBottom: 'none',
-                                borderBottomColor: alpha(modeColor, 0.42)
                             },
                             "& .MuiInput-underline:hover:not(.Mui-disabled):before": {
                                 borderBottom: 'none',
-                                borderBottomColor: modeColor
                             },
-                            "& .MuiInput-underline:hover:(.Mui-disabled):before": {
+                            "& .MuiInput-underline:(.Mui-disabled):before": {
                                 borderBottom: 'none',
-                                borderBottomColor: modeColor
                             },
                             "& .MuiInput-underline:after": {
                                 borderBottom: 'none',
-                                borderBottomColor: modeColor
                             }
                         }}
                         disabled={isFormulating || isLoadingIdeas}

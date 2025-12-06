@@ -649,41 +649,41 @@ export const AppFC: FC<AppFCProps> = function AppFC(appProps) {
             ].join(",")
         },
         // Default Material UI palette
-        palette: {
-            primary: {
-                main: blue[700]
-            },
-            secondary: {
-                main: purple[700]
-            },
-            derived: {
-                main: yellow[700], 
-            },
-            custom: {
-                main: orange[700], //lightsalmon
-            },
-            warning: {
-                main: '#bf5600', // New accessible color, original (#ed6c02) has insufficient color contrast of 3.11
-            },
-        },
-        // Microsoft Fluent UI palette (alternative option)
         // palette: {
         //     primary: {
-        //         main: '#0078d4'      // Fluent UI themePrimary (Microsoft Blue)
+        //         main: blue[700]
         //     },
         //     secondary: {
-        //         main: '#8764b8'      // Fluent UI purple
+        //         main: purple[700]
         //     },
         //     derived: {
-        //         main: '#ffb900',     // Fluent UI yellow/gold
+        //         main: yellow[700], 
         //     },
         //     custom: {
-        //         main: '#d83b01',     // Fluent UI orange (Office orange)
+        //         main: orange[700], //lightsalmon
         //     },
         //     warning: {
-        //         main: '#a4262c',     // Fluent UI red (accessible)
+        //         main: '#bf5600', // New accessible color, original (#ed6c02) has insufficient color contrast of 3.11
         //     },
         // },
+       // Microsoft Fluent UI palette (alternative option)
+        palette: {
+            primary: {
+                main: '#0078d4'      // Fluent UI themePrimary (Microsoft Blue)
+            },
+            secondary: {
+                main: '#8764b8'      // Fluent UI purple
+            },
+            derived: {
+                main: '#ffb900',     // Fluent UI yellow/gold
+            },
+            custom: {
+                main: '#d83b01',     // Fluent UI orange (Office orange)
+            },
+            warning: {
+                main: '#a4262c',     // Fluent UI red (accessible)
+            },
+        },
     });
 
     // Check if we're on the about page

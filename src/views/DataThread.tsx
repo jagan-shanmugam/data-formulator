@@ -333,15 +333,6 @@ let buildChartCard = (
             position: 'relative',
             ...(unread && {
                 boxShadow: '0 0 6px rgba(255, 152, 0, 0.15), 0 0 12px rgba(255, 152, 0, 0.15)',
-                animation: 'glow 2s ease-in-out infinite alternate',
-                '@keyframes glow': {
-                    '0%': {
-                        boxShadow: '0 0 6px rgba(255, 152, 0, 0.15), 0 0 12px rgba(255, 152, 0, 0.15)',
-                    },
-                    '100%': {
-                        boxShadow: '0 0 8px rgba(255, 152, 0, 0.2), 0 0 16px rgba(255, 152, 0, 0.2)',
-                    },
-                },
             })
         }}>
         {chartElement.element}
@@ -651,7 +642,7 @@ let SingleThreadGroupView: FC<{
                             padding: 0.25,
                             '&:hover': {
                                 transform: 'scale(1.3)',
-                                transition: 'all 0.2s ease'
+                                transition: 'all 0.1s linear'
                             },
                             '&.Mui-disabled': {
                                 color: 'rgba(0, 0, 0, 0.5)'
@@ -687,7 +678,7 @@ let SingleThreadGroupView: FC<{
                                 padding: 0.25, 
                                 '&:hover': {
                                     transform: 'scale(1.2)',
-                                    transition: 'all 0.2s ease'
+                                    transition: 'all 0.1s linear'
                                 } 
                             }}
                                 onClick={(event) => {
@@ -706,7 +697,7 @@ let SingleThreadGroupView: FC<{
                         {tableDeleteEnabled && <Tooltip key="delete-table-btn-tooltip" title="delete table">
                             <IconButton aria-label="share" size="small" sx={{ padding: 0.25, '&:hover': {
                                 transform: 'scale(1.2)',
-                                transition: 'all 0.2s ease'
+                                transition: 'all 0.1s linear'
                                 } }}
                                 onClick={(event) => {
                                     event.stopPropagation();
@@ -720,7 +711,7 @@ let SingleThreadGroupView: FC<{
                         <Tooltip key="create-new-chart-btn-tooltip" title="create a new chart">
                             <IconButton aria-label="share" size="small" sx={{ padding: 0.25, '&:hover': {
                                 transform: 'scale(1.2)',
-                                transition: 'all 0.2s ease'
+                                transition: 'all 0.1s linear'
                                 } }}
                                 onClick={(event) => {
                                     event.stopPropagation();
