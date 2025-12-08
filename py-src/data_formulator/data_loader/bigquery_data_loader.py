@@ -167,7 +167,6 @@ Supported Operations:
 
     def _convert_bigquery_dtypes(self, df: pd.DataFrame) -> pd.DataFrame:
         """Convert BigQuery-specific dtypes to standard pandas dtypes"""
-        import json
 
         def safe_convert(x):
             try:
