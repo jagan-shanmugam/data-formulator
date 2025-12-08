@@ -28,12 +28,11 @@ https://github.com/user-attachments/assets/8ca57b68-4d7a-42cb-bcce-43f8b1681ce2
 
 
 ## News 🔥🔥🔥
-[12-08-2025] Data Formulator 0.5.1: More dataloaders and improved performance
-- Data loaders: Google Big Query, MySQL (updated), Postgres (updated), MangoDB.
-- New chart types: US Map, Pie Chart.
-- Edit generated reports with [ChartArtifact](https://github.com/microsoft/chartifact).
-- UI interaction gets much faster.
-- Concept-level derivation is deprecated.
+[12-08-2025] **Data Formulator 0.5.1** — Connect more, visualize more, move faster
+- 🔌 **Community data loaders**: Google BigQuery, MySQL, Postgres, MongoDB
+- 📊 **New chart types**: US Map & Pie Chart (more to be added soon)
+- ✏️ **Editable reports**: Refine generated reports with [Chartifact](https://github.com/microsoft/chartifact) in markdown style. [demo](https://github.com/microsoft/data-formulator/pull/200#issue-3635408217)
+- ⚡ **Snappier UI**: Noticeably faster interactions across the board
 
 [11-07-2025] Data Formulator 0.5: Vibe with your data, in control
 
