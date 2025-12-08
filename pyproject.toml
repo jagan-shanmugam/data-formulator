@@ -40,7 +40,8 @@ dependencies = [
     "boto3",
     "backoff",
     "beautifulsoup4",
-    "scikit-learn"
+    "scikit-learn",
+    "pymongo"
 ]
 
 [project.urls]
