@@ -19,4 +19,5 @@ vl-convert-python
 backoff
 beautifulsoup4
 scikit-learn
+pymongo
 -e . #also need to install data formulator itself
