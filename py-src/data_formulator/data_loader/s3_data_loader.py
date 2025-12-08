@@ -7,6 +7,12 @@ from data_formulator.data_loader.external_data_loader import ExternalDataLoader,
 from typing import Dict, Any, List
 from data_formulator.security import validate_sql_query
 
+try:
+    import boto3
+    BOTO3_AVAILABLE = True
+except ImportError:
+    BOTO3_AVAILABLE = False
+
 class S3DataLoader(ExternalDataLoader):
 
     @staticmethod
@@ -58,6 +64,12 @@ class S3DataLoader(ExternalDataLoader):
         """
 
     def __init__(self, params: Dict[str, Any], duck_db_conn: duckdb.DuckDBPyConnection):
+        if not BOTO3_AVAILABLE:
+            raise ImportError(
+                "boto3 is required for S3 connections. "
+                "Install with: pip install boto3"
+            )
+        
         self.params = params
         self.duck_db_conn = duck_db_conn
         

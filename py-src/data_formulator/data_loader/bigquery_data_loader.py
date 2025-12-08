@@ -70,7 +70,10 @@ Supported Operations:
 
     def __init__(self, params: Dict[str, Any], duck_db_conn: duckdb.DuckDBPyConnection):
         if not BIGQUERY_AVAILABLE:
-            raise ImportError("google-cloud-bigquery is required for BigQuery connections. Install with: pip install google-cloud-bigquery")
+            raise ImportError(
+                "google-cloud-bigquery is required for BigQuery connections. "
+                "Install with: pip install google-cloud-bigquery google-auth"
+            )
         
         self.params = params
         self.duck_db_conn = duck_db_conn
@@ -285,22 +288,18 @@ Supported Operations:
 
             self.ingest_df_to_duckdb(df, name_as)
 
-    def view_query_sample(self, query: str) -> str:
-        """Execute query and return sample results as a JSON string"""
-        try:
-            result, error_message = validate_sql_query(query)
-            if not result:
-                raise ValueError(error_message)
-            
-            # Add LIMIT if not present
-            if "LIMIT" not in query.upper():
-                query += " LIMIT 10"
-            
-            df = self.client.query(query).to_dataframe()
-            return df.to_json(orient="records")
-        except Exception as e:
-            log.error(f"Error executing query sample: {e}")
-            return "[]"
+    def view_query_sample(self, query: str) -> List[Dict[str, Any]]:
+        """Execute query and return sample results as a list of dictionaries"""
+        result, error_message = validate_sql_query(query)
+        if not result:
+            raise ValueError(error_message)
+        
+        # Add LIMIT if not present
+        if "LIMIT" not in query.upper():
+            query += " LIMIT 10"
+        
+        df = self.client.query(query).to_dataframe()
+        return json.loads(df.to_json(orient="records"))
 
     def ingest_data_from_query(self, query: str, name_as: str) -> pd.DataFrame:
         """Execute custom query and ingest results into DuckDB"""

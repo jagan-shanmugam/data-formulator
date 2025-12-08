@@ -12,11 +12,11 @@
 
 </div>
 
-🪄 Turn data into insights with AI Agents, with the exploration paths you choose. Try Data Formulator now!
+🪄 Explore data with visualizations, powered by AI agents. Try Data Formulator now!
 
-- 🤖 New in v0.5: agent model + interative control [(video)](https://www.youtube.com/watch?v=GfTE2FLyMrs)
-- 🔥🔥🔥 Try our online demo at [https://data-formulator.ai](https://data-formulator.ai)
-- Any questions, thoughts? Discuss in the Discord channel! [![Discord](https://img.shields.io/badge/discord-chat-green?logo=discord)](https://discord.gg/mYCZMQKYZb)
+- Interative exploration with AI agents [(video)](https://www.youtube.com/watch?v=GfTE2FLyMrs)
+- Online demo available at [https://data-formulator.ai](https://data-formulator.ai)
+- Discuss in the Discord channel! [![Discord](https://img.shields.io/badge/discord-chat-green?logo=discord)](https://discord.gg/mYCZMQKYZb)
 
 <!-- [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/microsoft/data-formulator?quickstart=1) -->
 
@@ -28,6 +28,12 @@ https://github.com/user-attachments/assets/8ca57b68-4d7a-42cb-bcce-43f8b1681ce2
 
 
 ## News 🔥🔥🔥
+[12-08-2025] Data Formulator 0.5.1: More dataloaders and improved performance
+- Data loaders: Google Big Query, MySQL (updated), Postgres (updated), MangoDB.
+- New chart types: US Map, Pie Chart.
+- Edit generated reports with [ChartArtifact](https://github.com/microsoft/chartifact).
+- UI interaction gets much faster.
+- Concept-level derivation is deprecated.
 
 [11-07-2025] Data Formulator 0.5: Vibe with your data, in control
 

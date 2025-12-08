@@ -3,12 +3,17 @@ import logging
 
 import pandas as pd
 import duckdb
-import pymysql
 
 from data_formulator.data_loader.external_data_loader import ExternalDataLoader, sanitize_table_name
 
 from data_formulator.security import validate_sql_query
 from typing import Dict, Any, Optional, List
+
+try:
+    import pymysql
+    PYMYSQL_AVAILABLE = True
+except ImportError:
+    PYMYSQL_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +59,12 @@ MySQL Connection Instructions:
 """
 
     def __init__(self, params: Dict[str, Any], duck_db_conn: duckdb.DuckDBPyConnection):
+        if not PYMYSQL_AVAILABLE:
+            raise ImportError(
+                "pymysql is required for MySQL connections. "
+                "Install with: pip install pymysql"
+            )
+        
         self.params = params
         self.duck_db_conn = duck_db_conn
         

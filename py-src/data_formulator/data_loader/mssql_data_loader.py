@@ -148,17 +148,12 @@ SQL Server Connection Instructions:
         log.info("Initializing MSSQL DataLoader with parameters: %s", params)
 
         if not PYODBC_AVAILABLE:
-            error_msg = """
-pyodbc is required for MSSQL connections but is not properly installed.
-
-Installation steps for macOS:
-1. Install unixodbc: brew install unixodbc
-2. Install pyodbc: pip install pyodbc
-3. Install Microsoft ODBC Driver for SQL Server
-
-For other platforms, see: https://github.com/mkleehammer/pyodbc/wiki
-"""
-            raise ImportError(error_msg.strip())
+            raise ImportError(
+                "pyodbc is required for MSSQL connections. "
+                "Install with: pip install pyodbc\n"
+                "Note for macOS: You may also need to run 'brew install unixodbc' first.\n"
+                "For other platforms, see: https://github.com/mkleehammer/pyodbc/wiki"
+            )
 
         self.params = params
         self.duck_db_conn = duck_db_conn
