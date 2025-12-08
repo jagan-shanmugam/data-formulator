@@ -17,5 +17,5 @@ DATA_LOADERS = {
     "bigquery": BigQueryDataLoader
 }
 
-__all__ = ["ExternalDataLoader", "MySQLDataLoader", "MSSQLDataLoader", "KustoDataLoader", "S3DataLoader", "AzureBlobDataLoader","PostgreSQLDataLoader","DATA_LOADERS"]
+__all__ = ["ExternalDataLoader", "MySQLDataLoader", "MSSQLDataLoader", "KustoDataLoader", "S3DataLoader", "AzureBlobDataLoader","PostgreSQLDataLoader", "BigQueryDataLoader", "DATA_LOADERS"]
 

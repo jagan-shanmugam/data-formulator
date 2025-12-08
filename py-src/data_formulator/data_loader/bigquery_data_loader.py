@@ -1,10 +1,12 @@
 import json
 import logging
-from typing import Dict, Any, List
+import re
+from typing import Dict, Any, List, Optional
 import pandas as pd
 import duckdb
 
 from data_formulator.data_loader.external_data_loader import ExternalDataLoader, sanitize_table_name
+from data_formulator.security import validate_sql_query
 
 try:
     from google.cloud import bigquery
@@ -191,15 +193,15 @@ Supported Operations:
             elif str(df[col].dtype).startswith("db_dtypes"):
                 try:
                     df[col] = df[col].astype(str)
-                except Exception:
-                    pass
+                except Exception as e:
+                   logging.error(f"Failed to convert column '{col}' to string: {e}")
             # Handle nested objects/JSON columns
             elif df[col].dtype == "object":
                 df[col] = df[col].apply(safe_convert)
 
         return df
 
-    def ingest_data(self, table_name: str, name_as: str | None = None, size: int = 1000000):
+    def ingest_data(self, table_name: str, name_as: Optional[str] = None, size: int = 1000000):
             """Ingest data from BigQuery table into DuckDB with stable, de-duplicated column aliases."""
             if name_as is None:
                 name_as = table_name.split('.')[-1]
@@ -221,14 +223,12 @@ Supported Operations:
                     'device.category'    -> 'device_category'
                     'event_params.value' -> 'event_params_value'
                 """
-                import re as _re
-
                 # path "a.b.c" -> "a_b_c"
                 alias = field_path.replace('.', '_')
 
                 # remove weird characters
-                alias = _re.sub(r'[^0-9a-zA-Z_]', '_', alias)
-                alias = _re.sub(r'_+', '_', alias).strip('_') or "col"
+                alias = re.sub(r'[^0-9a-zA-Z_]', '_', alias)
+                alias = re.sub(r'_+', '_', alias).strip('_') or "col"
 
                 # must start with letter or underscore
                 if not alias[0].isalpha() and alias[0] != '_':
@@ -285,22 +285,30 @@ Supported Operations:
 
             self.ingest_df_to_duckdb(df, name_as)
 
-    def view_query_sample(self, query: str) -> List[Dict[str, Any]]:
-        """Execute query and return sample results"""
+    def view_query_sample(self, query: str) -> str:
+        """Execute query and return sample results as a JSON string"""
         try:
+            result, error_message = validate_sql_query(query)
+            if not result:
+                raise ValueError(error_message)
+            
             # Add LIMIT if not present
             if "LIMIT" not in query.upper():
                 query += " LIMIT 10"
             
             df = self.client.query(query).to_dataframe()
-            return df.to_dict(orient="records")
+            return df.to_json(orient="records")
         except Exception as e:
             log.error(f"Error executing query sample: {e}")
-            return []
+            return "[]"
 
     def ingest_data_from_query(self, query: str, name_as: str) -> pd.DataFrame:
         """Execute custom query and ingest results into DuckDB"""
         name_as = sanitize_table_name(name_as)
+        
+        result, error_message = validate_sql_query(query)
+        if not result:
+            raise ValueError(error_message)
         
         # Execute query and get DataFrame
         df = self.client.query(query).to_dataframe()
