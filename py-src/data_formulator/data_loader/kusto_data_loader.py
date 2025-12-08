@@ -236,7 +236,7 @@ Required Parameters:
             
             total_rows_ingested += len(chunk_df)
 
-    def view_query_sample(self, query: str) -> str:
+    def view_query_sample(self, query: str) -> List[Dict[str, Any]]:
         df = self.query(query).head(10)
         return json.loads(df.to_json(orient="records", date_format='iso'))
 

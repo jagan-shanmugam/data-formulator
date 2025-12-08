@@ -245,7 +245,7 @@ MySQL Connection Instructions:
         self.ingest_df_to_duckdb(df, name_as)
         logger.info(f"Successfully ingested {len(df)} rows from {table_name} into DuckDB table {name_as}")
 
-    def view_query_sample(self, query: str) -> str:
+    def view_query_sample(self, query: str) -> List[Dict[str, Any]]:
         result, error_message = validate_sql_query(query)
         if not result:
             raise ValueError(error_message)

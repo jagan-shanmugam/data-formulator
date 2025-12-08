@@ -143,7 +143,7 @@ class PostgreSQLDataLoader(ExternalDataLoader):
             LIMIT {size}
         """)
 
-    def view_query_sample(self, query: str) -> str:
+    def view_query_sample(self, query: str) -> List[Dict[str, Any]]:
         result, error_message = validate_sql_query(query)
         if not result:
             raise ValueError(error_message)

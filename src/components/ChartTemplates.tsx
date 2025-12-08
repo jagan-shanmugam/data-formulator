@@ -25,6 +25,9 @@ import chartIconCustomLine from '../assets/chart-icon-custom-line-min.png';
 import chartIconCustomBar from '../assets/chart-icon-custom-bar-min.png';
 import chartIconCustomRect from '../assets/chart-icon-custom-rect-min.png';
 import chartIconCustomArea from '../assets/chart-icon-custom-area-min.png';
+import chartIconPie from '../assets/chart-icon-pie-min.png';
+import chartIconUSMap from '../assets/chart-icon-us-map-min.png';
+import chartIconPyramid from '../assets/chart-icon-pyramid-min.png';
 
 // Chart Icon Component using static imports
 const ChartIcon: React.FC<{ src: string; alt?: string }> = ({ src, alt = "" }) => {
@@ -199,7 +202,7 @@ const barCharts: ChartTemplate[] = [
     },
     {
         "chart": "Pyramid Chart",
-        "icon": <ChartIcon src={chartIconColumn} />,
+        "icon": <ChartIcon src={chartIconPyramid} />,
         "template": {
             "spacing": 0,
             
@@ -327,7 +330,7 @@ const barCharts: ChartTemplate[] = [
 const mapCharts: ChartTemplate[] = [
     {
         "chart": "US Map with Points",
-        "icon": <PublicIcon color="primary" />,
+        "icon": <ChartIcon src={chartIconUSMap} />,
         "template": {
             "width": 500,
             "height": 300,
@@ -376,7 +379,7 @@ const mapCharts: ChartTemplate[] = [
 const pieCharts: ChartTemplate[] = [
     {
         "chart": "Pie Chart",
-        "icon": <PieChartOutlineIcon color="primary" />,
+        "icon": <ChartIcon src={chartIconPie} />,
         "template": {
             "mark": "arc",
             "encoding": { }

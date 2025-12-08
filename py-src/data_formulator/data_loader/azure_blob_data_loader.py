@@ -368,7 +368,7 @@ Supported File Formats:
         if not result:
             raise ValueError(error_message)
         
-        return self.duck_db_conn.execute(query).df().head(10).to_dict(orient="records")
+        return json.loads(self.duck_db_conn.execute(query).df().head(10).to_json(orient="records"))
 
     def ingest_data_from_query(self, query: str, name_as: str):
         # Execute the query and get results as a DataFrame
