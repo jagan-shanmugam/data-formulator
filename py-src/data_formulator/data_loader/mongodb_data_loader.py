@@ -24,7 +24,8 @@ class MongoDBDataLoader(ExternalDataLoader):
             {"name": "username", "type": "string", "required": False, "default": "", "description": ""},
             {"name": "password", "type": "string", "required": False, "default": "", "description": ""},
             {"name": "database", "type": "string", "required": True, "default": "", "description": ""},
-            {"name": "collection", "type": "string", "required": False, "default": "", "description": "If specified, only this collection will be accessed"}
+            {"name": "collection", "type": "string", "required": False, "default": "", "description": "If specified, only this collection will be accessed"},
+            {"name": "authSource", "type": "string", "required": False, "default": "", "description": "Authentication database (defaults to target database if empty)"}
         ]
         return params_list
 
@@ -67,9 +68,17 @@ MongoDB Connection Instructions:
             password = self.params.get("password", "")
             database = self.params.get("database", "")
             collection = self.params.get("collection", "")
+            auth_source = self.params.get("authSource", "") or database  # Default to target database
             
             if username and password:
-                self.mongo_client = pymongo.MongoClient(host=host, port=port, username=username, password=password)
+                # Use authSource to specify which database contains user credentials
+                self.mongo_client = pymongo.MongoClient(
+                    host=host, 
+                    port=port, 
+                    username=username, 
+                    password=password,
+                    authSource=auth_source
+                )
             else:
                 self.mongo_client = pymongo.MongoClient(host=host, port=port)
             
@@ -80,6 +89,28 @@ MongoDB Connection Instructions:
             
         except Exception as e:
             raise Exception(f"Failed to connect to MongoDB: {e}")
+    
+    def close(self):
+        """Close the MongoDB connection"""
+        if hasattr(self, 'mongo_client') and self.mongo_client is not None:
+            try:
+                self.mongo_client.close()
+                self.mongo_client = None
+            except Exception as e:
+                print(f"Warning: Failed to close MongoDB connection: {e}")
+
+    def __enter__(self):
+        """Context manager entry"""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit - ensures connection is closed"""
+        self.close()
+        return False
+
+    def __del__(self):
+        """Destructor to ensure connection is closed"""
+        self.close()
     
     @staticmethod
     def _flatten_document(doc: Dict[str, Any], parent_key: str = '', sep: str = '_') -> Dict[str, Any]:
@@ -237,7 +268,7 @@ MongoDB Connection Instructions:
         return
 
     
-    def view_query_sample(self, query: str) -> str:
+    def view_query_sample(self, query: str) -> List[Dict[str, Any]]:
 
         self._existed_collections_in_duckdb()
         self._difference_collections()
@@ -271,17 +302,27 @@ MongoDB Connection Instructions:
         self._difference_collections()
         self._preload_all_collections(self.collection.name if self.collection else "")
         
-        df = self.duck_db_conn.execute(query).df()
+        query_result_df = self.duck_db_conn.execute(query).df()
 
         self._drop_all_loaded_tables()
 
-        for collection_name, df in self.existed_collections.items():
-            self._load_dataframe_to_duckdb(df, collection_name)
+        for collection_name, existing_df in self.existed_collections.items():
+            self._load_dataframe_to_duckdb(existing_df, collection_name)
         
-        self._load_dataframe_to_duckdb(df, name_as)
+        self._load_dataframe_to_duckdb(query_result_df, name_as)
 
-        return df
+        return query_result_df
     
+    @staticmethod
+    def _quote_identifier(name: str) -> str:
+        """
+        Safely quote a SQL identifier to prevent SQL injection.
+        Double quotes are escaped by doubling them.
+        """
+        # Escape any double quotes in the identifier by doubling them
+        escaped = name.replace('"', '""')
+        return f'"{escaped}"'
+
     def _existed_collections_in_duckdb(self):
         """
         Return the names and contents of tables already loaded into DuckDB
@@ -290,7 +331,8 @@ MongoDB Connection Instructions:
         duckdb_tables = self.duck_db_conn.execute("SHOW TABLES").df()
         for _, row in duckdb_tables.iterrows():
             collection_name = row['name']
-            df = self.duck_db_conn.execute(f"SELECT * FROM {collection_name}").df()
+            quoted_name = self._quote_identifier(collection_name)
+            df = self.duck_db_conn.execute(f"SELECT * FROM {quoted_name}").df()
             self.existed_collections[collection_name] = df
 
 
@@ -311,7 +353,8 @@ MongoDB Connection Instructions:
         """
         for table_name in self.loaded_tables.values():
             try:
-                self.duck_db_conn.execute(f"DROP TABLE IF EXISTS main.{table_name}")
+                quoted_name = self._quote_identifier(table_name)
+                self.duck_db_conn.execute(f"DROP TABLE IF EXISTS main.{quoted_name}")
                 print(f"Dropped loaded table: {table_name}")
             except Exception as e:
                 print(f"Warning: Failed to drop table '{table_name}': {e}")
@@ -366,5 +409,10 @@ MongoDB Connection Instructions:
 
         self.duck_db_conn.register(temp_view_name, df)
         # Use CREATE OR REPLACE to directly replace existing table
-        self.duck_db_conn.execute(f"CREATE OR REPLACE TABLE main.{table_name} AS SELECT * FROM {temp_view_name} LIMIT {size}")
-        self.duck_db_conn.execute(f"DROP VIEW {temp_view_name}")
+        # Quote identifiers to prevent SQL injection
+        quoted_table_name = self._quote_identifier(table_name)
+        quoted_temp_view = self._quote_identifier(temp_view_name)
+        # Ensure size is an integer to prevent injection via size parameter
+        safe_size = int(size)
+        self.duck_db_conn.execute(f"CREATE OR REPLACE TABLE main.{quoted_table_name} AS SELECT * FROM {quoted_temp_view} LIMIT {safe_size}")
+        self.duck_db_conn.execute(f"DROP VIEW {quoted_temp_view}")
