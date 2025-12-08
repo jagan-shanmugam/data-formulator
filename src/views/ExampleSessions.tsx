@@ -61,18 +61,10 @@ export const ExampleSessionCard: React.FC<{
 }> = ({ session, theme, onClick, disabled }) => {
     return (
         <Card
+            variant="outlined"
             sx={{
-                width: 240,
-                borderRadius: 3,
-                border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                transition: 'all 0.3s ease-in-out',
                 cursor: disabled ? 'default' : 'pointer',
-                opacity: disabled ? 0.6 : 1,
-                position: 'relative',
-                overflow: 'hidden',
                 '&:hover': disabled ? {} : {
-                    boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
                     transform: 'translateY(-2px)',
                     borderColor: alpha(theme.palette.primary.main, 0.4),
                 },
@@ -82,7 +74,6 @@ export const ExampleSessionCard: React.FC<{
             <Box
                 sx={{
                     height: 100,
-                    background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)} 0%, ${alpha(theme.palette.custom.main, 0.1)} 100%)`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',

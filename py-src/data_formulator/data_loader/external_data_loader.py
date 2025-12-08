@@ -108,7 +108,7 @@ class ExternalDataLoader(ABC):
         pass
 
     @abstractmethod
-    def view_query_sample(self, query: str) -> str:
+    def view_query_sample(self, query: str) -> List[Dict[str, Any]]:
         pass
 
     @abstractmethod

@@ -763,7 +763,7 @@ export const EncodingShelfCard: FC<EncodingShelfCardProps> = function ({ chartId
         const timeoutId = setTimeout(() => controller.abort(), config.formulateTimeoutSeconds * 1000);
     
         fetch(engine, {...message, signal: controller.signal })
-            .then((response) => response.json())
+            .then((response: Response) => response.json())
             .then((data) => {
                 
                 dispatch(dfActions.changeChartRunningStatus({chartId, status: false}))

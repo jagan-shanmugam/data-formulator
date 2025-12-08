@@ -52,12 +52,6 @@ export interface ModelConfig {
     api_version?: string;
 }
 
-// Define model slot types
-export const MODEL_SLOT_TYPES = ['generation', 'hint'] as const;
-export type ModelSlotType = typeof MODEL_SLOT_TYPES[number];
-
-// Derive ModelSlots interface from the constant
-export type ModelSlots = Partial<Record<ModelSlotType, string>>;
 
 export interface ClientConfig {
     formulateTimeoutSeconds: number;
@@ -83,7 +77,7 @@ export interface DataFormulatorState {
 
     sessionId: string | undefined;
     models: ModelConfig[];
-    modelSlots: ModelSlots;
+    selectedModelId: string | undefined;
     testedModels: {id: string, status: 'ok' | 'error' | 'testing' | 'unknown', message: string}[];
 
     tables : DictTable[];
@@ -138,7 +132,7 @@ const initialState: DataFormulatorState = {
 
     sessionId: undefined,
     models: [],
-    modelSlots: {},
+    selectedModelId: undefined,
     testedModels: [],
 
     tables: [],
@@ -371,7 +365,7 @@ export const dataFormulatorSlice = createSlice({
             // models should not be loaded again, especially they may be from others
             state.agentRules = state.agentRules || initialState.agentRules;
             state.models = state.models || [];
-            state.modelSlots = state.modelSlots || {};
+            state.selectedModelId = state.selectedModelId || undefined;
             state.testedModels = state.testedModels || [];
             state.dataLoaderConnectParams = state.dataLoaderConnectParams || {};
             state.serverConfig = initialState.serverConfig;
@@ -425,25 +419,16 @@ export const dataFormulatorSlice = createSlice({
             state.agentRules = action.payload;
         },
         selectModel: (state, action: PayloadAction<string | undefined>) => {
-            state.modelSlots = { ...state.modelSlots, generation: action.payload };
-        },
-        setModelSlot: (state, action: PayloadAction<{slotType: ModelSlotType, modelId: string | undefined}>) => {
-            state.modelSlots = { ...state.modelSlots, [action.payload.slotType]: action.payload.modelId };
-        },
-        setModelSlots: (state, action: PayloadAction<ModelSlots>) => {
-            state.modelSlots = action.payload;
+            state.selectedModelId = action.payload;
         },
         addModel: (state, action: PayloadAction<ModelConfig>) => {
             state.models = [...state.models, action.payload];
         },
         removeModel: (state, action: PayloadAction<string>) => {
             state.models = state.models.filter(model => model.id != action.payload);
-            // Remove the model from all slots if it's assigned
-            Object.keys(state.modelSlots).forEach(slotType => {
-                if (state.modelSlots[slotType as ModelSlotType] === action.payload) {
-                    state.modelSlots[slotType as ModelSlotType] = undefined;
-                }
-            });
+            if (state.selectedModelId == action.payload) {
+                state.selectedModelId = undefined;
+            }
         },
         updateModelStatus: (state, action: PayloadAction<{id: string, status: 'ok' | 'error' | 'testing' | 'unknown', message: string}>) => {
             let id = action.payload.id;
@@ -691,12 +676,7 @@ export const dataFormulatorSlice = createSlice({
             if (index != -1) {
                 conceptShelfItems[index] = concept;
             } else {
-                if (concept.source != "derived") {
-                    conceptShelfItems = [concept, ...conceptShelfItems];
-                } else {
-                    // insert the new concept right after the first parent
-                    conceptShelfItems.splice(conceptShelfItems.findIndex(f => f.id == concept.transform?.parentIDs[0]) + 1, 0, concept)
-                }
+                conceptShelfItems = [concept, ...conceptShelfItems];
             }
             state.conceptShelfItems = conceptShelfItems;
         },
@@ -708,20 +688,7 @@ export const dataFormulatorSlice = createSlice({
                 && Object.entries(chart.encodingMap).some(([channel, encoding]) => encoding.fieldID && conceptID == encoding.fieldID))) {
                 console.log("cannot delete!")
             } else {
-                let field = state.conceptShelfItems.find(f => f.id == conceptID);
-                if (field?.source == "derived") {
-                    // delete generated column from the derived table
-                    let table = state.tables.find(t => t.id == field.tableRef) as DictTable;
-                    let fieldIndex = table.names.indexOf(field.name);
-                    table.names = table.names.slice(0, fieldIndex).concat(table.names.slice(fieldIndex + 1));
-                    delete table.metadata[field.name];
-                    table.rows = table.rows.map(row => {
-                        delete row[field.name];
-                        return row;
-                    });
-                }
                 state.conceptShelfItems = state.conceptShelfItems.filter(f => f.id != conceptID);
-
                 for (let chart of allCharts)  {
                     for (let [channel, encoding] of Object.entries(chart.encodingMap)) {
                         if (encoding.fieldID && conceptID == encoding.fieldID) {
@@ -776,9 +743,6 @@ export const dataFormulatorSlice = createSlice({
 
             state.conceptShelfItems = state.conceptShelfItems.filter(field => !(field.source == "custom" 
                 && !(fieldNamesFromTables.includes(field.name) || fieldIdsReferredByCharts.includes(field.id))))
-
-            // consider cleaning up other fields if 
-
         },
         addMessages: (state, action: PayloadAction<Message>) => {
             state.messages = [...state.messages, action.payload];
@@ -939,12 +903,8 @@ export const dataFormulatorSlice = createSlice({
                 ...state.testedModels.filter(t => !defaultModels.map((m: ModelConfig) => m.id).includes(t.id))
             ]
 
-            if (defaultModels.length > 0) {
-                for (const slotType of MODEL_SLOT_TYPES) {
-                    if (state.modelSlots[slotType] == undefined) {
-                        state.modelSlots[slotType] = defaultModels[0].id;
-                    }
-                }
+            if (defaultModels.length > 0 && state.selectedModelId == undefined) {
+                state.selectedModelId = defaultModels[0].id;
             }
 
             // console.log("load model complete");
@@ -970,14 +930,7 @@ export const dataFormulatorSlice = createSlice({
 
 export const dfSelectors = {
     getActiveModel: (state: DataFormulatorState) : ModelConfig => {
-        return state.models.find(m => m.id == state.modelSlots.generation) || state.models[0];
-    },
-    getModelBySlot: (state: DataFormulatorState, slotType: ModelSlotType) : ModelConfig | undefined => {
-        const modelId = state.modelSlots[slotType];
-        return modelId ? state.models.find(m => m.id === modelId) : undefined;
-    },
-    getAllSlotTypes: () : ModelSlotType[] => {
-        return [...MODEL_SLOT_TYPES];
+        return state.models.find(m => m.id == state.selectedModelId) || state.models[0];
     },
     getActiveBaseTableIds: (state: DataFormulatorState) => {
         let focusedTableId = state.focusedTableId;

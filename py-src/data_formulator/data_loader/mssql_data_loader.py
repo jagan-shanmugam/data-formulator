@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 import duckdb
 import pandas as pd
@@ -418,7 +418,7 @@ For other platforms, see: https://github.com/mkleehammer/pyodbc/wiki
             log.error(f"Failed to ingest data from {table_name}: {e}")
             raise
 
-    def view_query_sample(self, query: str) -> str:
+    def view_query_sample(self, query: str) -> List[Dict[str, Any]]:
         """Execute a custom query and return sample results"""
         try:
             # Add TOP 10 if not already present for SELECT queries
