@@ -25,6 +25,7 @@ db-dtypes
 boto3
 pymysql
 pyodbc
+pymongo
 
 # Install data_formulator itself in editable mode
 -e .

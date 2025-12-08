@@ -54,6 +54,10 @@ class QueryCompletionAgent(object):
 
     def run(self, data_source_metadata, query):
 
+        # For MongoDB, treat it as a SQL-like data source for query generation
+        if data_source_metadata['data_loader_type'] == "mongodb":
+            data_source_metadata['data_loader_type'] = "SQL"
+
         user_query = f"[DATA SOURCE]\n\n{json.dumps(data_source_metadata, indent=2)}\n\n[USER INPUTS]\n\n{query}\n\n"
 
         logger.info(user_query)

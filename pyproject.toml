@@ -35,6 +35,7 @@ dependencies = [
     "backoff",
     "beautifulsoup4",
     "scikit-learn",
+
     "azure-identity",
     "azure-kusto-data",
     "azure-keyvault-secrets",
@@ -44,7 +45,8 @@ dependencies = [
     "db-dtypes",
     "boto3",
     "pymysql",
-    "pyodbc"
+    "pyodbc",
+    "pymongo"
 ]
 
 [project.urls]
