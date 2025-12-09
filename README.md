@@ -14,9 +14,10 @@
 
 🪄 Explore data with visualizations, powered by AI agents. Try Data Formulator now!
 
-- Interative exploration with AI agents [(video)](https://www.youtube.com/watch?v=GfTE2FLyMrs)
-- Online demo available at [https://data-formulator.ai](https://data-formulator.ai)
-- Discuss in the Discord channel! [![Discord](https://img.shields.io/badge/discord-chat-green?logo=discord)](https://discord.gg/mYCZMQKYZb)
+
+<a href="https://data-formulator.ai">
+  <img src="https://img.shields.io/badge/🚀_Try_Demo-data--formulator.ai-0078d4?style=for-the-badge&logoColor=white" alt="Try Online Demo">
+</a>
 
 <!-- [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/microsoft/data-formulator?quickstart=1) -->
 
@@ -114,9 +115,9 @@ Here are milestones that lead to the current design:
 
 ## Overview
 
-**Data Formulator** is an application from Microsoft Research that uses AI agents to make it easier to turn data into insights.
+**Data Formulator** is a Microsoft Research prototype for data exploration with visualizations powered by AI agents.
 
-Data Formulator is an AI-powered tool for analysts to iteratively explore and visualize data. Started with data in any format (screenshot, text, csv, or database), users can work with AI agents with a novel blended interface that combines *user interface interactions (UI)* and *natural language (NL) inputs* to communicate their intents, control branching exploration directions, and create reports to share their insights. 
+Data Formulator enables analysts to iteratively explore and visualize data. Started with data in any format (screenshot, text, csv, or database), users can work with AI agents with a novel blended interface that combines *user interface interactions (UI)* and *natural language (NL) inputs* to communicate their intents, control branching exploration directions, and create reports to share their insights. 
 
 ## Get Started
 
