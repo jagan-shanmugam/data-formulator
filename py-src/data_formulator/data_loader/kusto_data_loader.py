@@ -8,10 +8,14 @@ import random
 import string
 from datetime import datetime
 
-from azure.kusto.data import KustoClient, KustoConnectionStringBuilder
-from azure.kusto.data.helpers import dataframe_from_result_table
-
 from data_formulator.data_loader.external_data_loader import ExternalDataLoader, sanitize_table_name
+
+try:
+    from azure.kusto.data import KustoClient, KustoConnectionStringBuilder
+    from azure.kusto.data.helpers import dataframe_from_result_table
+    KUSTO_AVAILABLE = True
+except ImportError:
+    KUSTO_AVAILABLE = False
 
 # Get logger for this module (logging config done in app.py)
 logger = logging.getLogger(__name__)
@@ -57,6 +61,11 @@ Required Parameters:
 """
 
     def __init__(self, params: Dict[str, Any], duck_db_conn: duckdb.DuckDBPyConnection):
+        if not KUSTO_AVAILABLE:
+            raise ImportError(
+                "azure-kusto-data is required for Kusto/Azure Data Explorer connections. "
+                "Install with: pip install azure-kusto-data"
+            )
 
         self.kusto_cluster = params.get("kusto_cluster", None)
         self.kusto_database = params.get("kusto_database", None)
@@ -236,7 +245,7 @@ Required Parameters:
             
             total_rows_ingested += len(chunk_df)
 
-    def view_query_sample(self, query: str) -> str:
+    def view_query_sample(self, query: str) -> List[Dict[str, Any]]:
         df = self.query(query).head(10)
         return json.loads(df.to_json(orient="records", date_format='iso'))
 

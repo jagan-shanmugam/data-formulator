@@ -7,6 +7,13 @@ from data_formulator.data_loader.external_data_loader import ExternalDataLoader,
 from typing import Dict, Any, List
 from data_formulator.security import validate_sql_query
 
+try:
+    from azure.storage.blob import BlobServiceClient, ContainerClient
+    from azure.identity import DefaultAzureCredential, AzureCliCredential, ManagedIdentityCredential, EnvironmentCredential, ChainedTokenCredential
+    AZURE_BLOB_AVAILABLE = True
+except ImportError:
+    AZURE_BLOB_AVAILABLE = False
+
 class AzureBlobDataLoader(ExternalDataLoader):
 
     @staticmethod
@@ -59,6 +66,12 @@ Supported File Formats:
 """
 
     def __init__(self, params: Dict[str, Any], duck_db_conn: duckdb.DuckDBPyConnection):
+        if not AZURE_BLOB_AVAILABLE:
+            raise ImportError(
+                "Azure storage libraries are required for Azure Blob connections. "
+                "Install with: pip install azure-storage-blob azure-identity"
+            )
+        
         self.params = params
         self.duck_db_conn = duck_db_conn
         
@@ -368,7 +381,7 @@ Supported File Formats:
         if not result:
             raise ValueError(error_message)
         
-        return self.duck_db_conn.execute(query).df().head(10).to_dict(orient="records")
+        return json.loads(self.duck_db_conn.execute(query).df().head(10).to_json(orient="records"))
 
     def ingest_data_from_query(self, query: str, name_as: str):
         # Execute the query and get results as a DataFrame

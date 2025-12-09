@@ -312,8 +312,11 @@ export const DatasetSelectionDialog: React.FC<{ buttonElement: any }> = function
 }
 
 export interface TableUploadDialogProps {
-    buttonElement: any;
-    disabled: boolean;
+    buttonElement?: any;
+    disabled?: boolean;
+    onOpen?: () => void;
+    // For external control of file input
+    fileInputRef?: React.RefObject<HTMLInputElement>;
 }
 
 const getUniqueTableName = (baseName: string, existingNames: Set<string>): string => {
@@ -326,9 +329,10 @@ const getUniqueTableName = (baseName: string, existingNames: Set<string>): strin
     return uniqueName;
 };
 
-export const TableUploadDialog: React.FC<TableUploadDialogProps> = ({ buttonElement, disabled }) => {
+export const TableUploadDialog: React.FC<TableUploadDialogProps> = ({ buttonElement, disabled, onOpen, fileInputRef }) => {
     const dispatch = useDispatch<AppDispatch>();
-    const inputRef = React.useRef<HTMLInputElement>(null);
+    const internalRef = React.useRef<HTMLInputElement>(null);
+    const inputRef = fileInputRef || internalRef;
     const existingTables = useSelector((state: DataFormulatorState) => state.tables);
     const existingNames = new Set(existingTables.map(t => t.id));
     const serverConfig = useSelector((state: DataFormulatorState) => state.serverConfig);
@@ -432,43 +436,52 @@ export const TableUploadDialog: React.FC<TableUploadDialogProps> = ({ buttonElem
                 inputRef={inputRef}
                 onChange={handleFileUpload}
             />
-            <Tooltip 
-                title={serverConfig.DISABLE_FILE_UPLOAD ? (
-                    <Typography sx={{ fontSize: '11px' }}>
-                        Install Data Formulator locally to enable file upload. <br />
-                        Link: <Link 
-                            href="https://github.com/microsoft/data-formulator" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            sx={{ color: 'inherit', textDecoration: 'underline' }}
-                            onClick={(e) => e.stopPropagation()}
+            {buttonElement && (
+                <Tooltip 
+                    title={serverConfig.DISABLE_FILE_UPLOAD ? (
+                        <Typography sx={{ fontSize: '11px' }}>
+                            Install Data Formulator locally to enable file upload. <br />
+                            Link: <Link 
+                                href="https://github.com/microsoft/data-formulator" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                sx={{ color: 'inherit', textDecoration: 'underline' }}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                https://github.com/microsoft/data-formulator
+                            </Link>
+                        </Typography>
+                    ) : ""}
+                    placement="top"
+                >
+                    <span style={{cursor: serverConfig.DISABLE_FILE_UPLOAD ? 'help' : 'pointer'}}>
+                        <Button 
+                            sx={{fontSize: "inherit"}} 
+                            variant="text" 
+                            color="primary" 
+                            disabled={disabled || serverConfig.DISABLE_FILE_UPLOAD}
+                            onClick={() => {
+                                inputRef.current?.click();
+                                onOpen?.();
+                            }}
                         >
-                            https://github.com/microsoft/data-formulator
-                        </Link>
-                    </Typography>
-                ) : ""}
-                placement="top"
-            >
-                <span style={{cursor: serverConfig.DISABLE_FILE_UPLOAD ? 'help' : 'pointer'}}>
-                    <Button 
-                        sx={{fontSize: "inherit"}} 
-                        variant="text" 
-                        color="primary" 
-                        disabled={disabled || serverConfig.DISABLE_FILE_UPLOAD}
-                        onClick={() => inputRef.current?.click()}
-                    >
-                        {buttonElement}
-                    </Button>
-                </span>
-            </Tooltip>
+                            {buttonElement}
+                        </Button>
+                    </span>
+                </Tooltip>
+            )}
         </>
     );
 }
 
 
 export interface TableCopyDialogProps {
-    buttonElement: any;
-    disabled: boolean;
+    buttonElement?: any;
+    disabled?: boolean;
+    onOpen?: () => void;
+    // Controlled mode props
+    open?: boolean;
+    onClose?: () => void;
 }
 
 export interface TableURLDialogProps {
@@ -549,9 +562,19 @@ export const TableURLDialog: React.FC<TableURLDialogProps> = ({ buttonElement, d
 }
 
 
-export const TableCopyDialogV2: React.FC<TableCopyDialogProps> = ({ buttonElement, disabled }) => {
+export const TableCopyDialogV2: React.FC<TableCopyDialogProps> = ({ 
+    buttonElement, 
+    disabled, 
+    onOpen,
+    open: controlledOpen,
+    onClose,
+}) => {
 
-    const [dialogOpen, setDialogOpen] = useState<boolean>(false);
+    const [internalOpen, setInternalOpen] = useState<boolean>(false);
+    
+    // Support both controlled and uncontrolled modes
+    const isControlled = controlledOpen !== undefined;
+    const dialogOpen = isControlled ? controlledOpen : internalOpen;
     
     const [tableContent, setTableContent] = useState<string>("");
     const [tableContentType, setTableContentType] = useState<'text' | 'image'>('text');
@@ -641,14 +664,18 @@ export const TableCopyDialogV2: React.FC<TableCopyDialogProps> = ({ buttonElemen
 
 
     const handleCloseDialog = useCallback(() => {
-        setDialogOpen(false);
+        if (isControlled) {
+            onClose?.();
+        } else {
+            setInternalOpen(false);
+        }
         // Reset state when closing
         setTableContent("");
         setDisplayContent("");
         setIsLargeContent(false);
         setIsOverSizeLimit(false);
         setShowFullContent(false);
-    }, []);
+    }, [isControlled, onClose]);
 
     let dialog = <Dialog key="table-selection-dialog" onClose={handleCloseDialog} open={dialogOpen}
             sx={{ '& .MuiDialog-paper': { maxWidth: '80%', maxHeight: 800, minWidth: 800 } }}
@@ -767,10 +794,15 @@ export const TableCopyDialogV2: React.FC<TableCopyDialogProps> = ({ buttonElemen
         </Dialog>;
 
     return <>
-        <Button sx={{fontSize: "inherit"}} variant="text" color="primary" 
-                    disabled={disabled} onClick={()=>{setDialogOpen(true)}}>
-                {buttonElement}
-        </Button>
+        {buttonElement && (
+            <Button sx={{fontSize: "inherit"}} variant="text" color="primary" 
+                        disabled={disabled} onClick={()=>{
+                            setInternalOpen(true);
+                            onOpen?.();
+                        }}>
+                    {buttonElement}
+            </Button>
+        )}
         {dialog}
     </>;
 }

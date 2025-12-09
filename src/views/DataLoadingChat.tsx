@@ -267,26 +267,48 @@ export const DataLoadingChat: React.FC = () => {
 };
 
 export interface DataLoadingChatDialogProps {
-    buttonElement: any;
+    buttonElement?: any;
     disabled?: boolean;
+    onOpen?: () => void;
+    // Controlled mode props
+    open?: boolean;
+    onClose?: () => void;
 }
 
-export const DataLoadingChatDialog: React.FC<DataLoadingChatDialogProps> = ({ buttonElement, disabled = false }) => {
-    const [dialogOpen, setDialogOpen] = useState<boolean>(false);
+export const DataLoadingChatDialog: React.FC<DataLoadingChatDialogProps> = ({ 
+    buttonElement, 
+    disabled = false, 
+    onOpen,
+    open: controlledOpen,
+    onClose,
+}) => {
+    const [internalOpen, setInternalOpen] = useState<boolean>(false);
     const dispatch = useDispatch<AppDispatch>();
     const dataCleanBlocks = useSelector((state: DataFormulatorState) => state.dataCleanBlocks);
 
+    // Support both controlled and uncontrolled modes
+    const isControlled = controlledOpen !== undefined;
+    const dialogOpen = isControlled ? controlledOpen : internalOpen;
+    const setDialogOpen = isControlled 
+        ? (open: boolean) => { if (!open && onClose) onClose(); }
+        : setInternalOpen;
+
     return (
         <>
-            <Button 
-                sx={{fontSize: "inherit"}} 
-                variant="text" 
-                color="primary" 
-                disabled={disabled}
-                onClick={() => setDialogOpen(true)}
-            >
-                {buttonElement}
-            </Button>
+            {buttonElement && (
+                <Button 
+                    sx={{fontSize: "inherit"}} 
+                    variant="text" 
+                    color="primary" 
+                    disabled={disabled}
+                    onClick={() => {
+                        setDialogOpen(true);
+                        onOpen?.();
+                    }}
+                >
+                    {buttonElement}
+                </Button>
+            )}
             <Dialog 
                 key="data-loading-chat-dialog" 
                 onClose={() => setDialogOpen(false)} 
@@ -294,7 +316,7 @@ export const DataLoadingChatDialog: React.FC<DataLoadingChatDialogProps> = ({ bu
                 sx={{ '& .MuiDialog-paper': { maxWidth: '100%', maxHeight: 840, minWidth: 800 } }}
             >
                 <DialogTitle sx={{display: "flex"}}>
-                    Vibe Data Loader
+                    Extract Data
                     {dataCleanBlocks.length > 0 && <Tooltip title="Reset dialog">  
                         <IconButton size="small" color='warning' 
                             sx={{

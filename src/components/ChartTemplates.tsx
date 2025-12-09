@@ -3,6 +3,8 @@
 
 import { ChartTemplate } from "./ComponentType";
 import InsightsIcon from '@mui/icons-material/Insights';
+import PublicIcon from '@mui/icons-material/Public';
+import PieChartOutlineIcon from '@mui/icons-material/PieChartOutline';
 import React from "react";
 
 // Import all chart icons statically so they are included in the build
@@ -23,6 +25,9 @@ import chartIconCustomLine from '../assets/chart-icon-custom-line-min.png';
 import chartIconCustomBar from '../assets/chart-icon-custom-bar-min.png';
 import chartIconCustomRect from '../assets/chart-icon-custom-rect-min.png';
 import chartIconCustomArea from '../assets/chart-icon-custom-area-min.png';
+import chartIconPie from '../assets/chart-icon-pie-min.png';
+import chartIconUSMap from '../assets/chart-icon-us-map-min.png';
+import chartIconPyramid from '../assets/chart-icon-pyramid-min.png';
 
 // Chart Icon Component using static imports
 const ChartIcon: React.FC<{ src: string; alt?: string }> = ({ src, alt = "" }) => {
@@ -197,7 +202,7 @@ const barCharts: ChartTemplate[] = [
     },
     {
         "chart": "Pyramid Chart",
-        "icon": <ChartIcon src={chartIconColumn} />,
+        "icon": <ChartIcon src={chartIconPyramid} />,
         "template": {
             "spacing": 0,
             
@@ -322,6 +327,73 @@ const barCharts: ChartTemplate[] = [
     }
 ]
 
+const mapCharts: ChartTemplate[] = [
+    {
+        "chart": "US Map with Points",
+        "icon": <ChartIcon src={chartIconUSMap} />,
+        "template": {
+            "width": 500,
+            "height": 300,
+            "layer": [
+                {
+                    "data": {
+                        "url": "https://vega.github.io/vega-lite/data/us-10m.json",
+                        "format": {
+                            "type": "topojson",
+                            "feature": "states"
+                        }
+                    },
+                    "projection": {
+                        "type": "albersUsa"
+                    },
+                    "mark": {
+                        "type": "geoshape",
+                        "fill": "lightgray",
+                        "stroke": "white"
+                    }
+                },
+                {
+                    "projection": {
+                        "type": "albersUsa"
+                    },
+                    "mark": "circle",
+                    "encoding": {
+                        "longitude": { },
+                        "latitude": { },
+                        "size": {},
+                        "color": {}
+                    }
+                }
+            ]
+        },
+        "channels": ["longitude", "latitude", "color", "size"],
+        "paths": {
+            "longitude": ["layer", 1, "encoding", "longitude"],
+            "latitude": ["layer", 1, "encoding", "latitude"],
+            "color": ["layer", 1, "encoding", "color"],
+            "size": ["layer", 1, "encoding", "size"]
+        }
+    }
+]
+
+const pieCharts: ChartTemplate[] = [
+    {
+        "chart": "Pie Chart",
+        "icon": <ChartIcon src={chartIconPie} />,
+        "template": {
+            "mark": "arc",
+            "encoding": { }
+        },
+        "channels": ["theta", "color", "column", "row"],
+        "paths": {
+            "theta": ["encoding", "theta"],
+            "color": ["encoding", "color"],
+            "column": ["encoding", "column"],
+            "row": ["encoding", "row"]
+        }
+    }
+]
+
 let lineCharts = [
     {
         "chart": "Line Chart",
@@ -422,6 +494,8 @@ export const CHART_TEMPLATES : {[key: string] : ChartTemplate[]} = {
     "table": tablePlots,
     "scatter": scatterPlots,
     "bar": barCharts,
+    "map": mapCharts,
+    "pie": pieCharts,
     "line": lineCharts,
     "custom": customCharts,
 }

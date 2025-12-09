@@ -34,7 +34,8 @@ import {
   ToggleButtonGroup,
   ToggleButton,
   useTheme,
-  Link
+  Link,
+  Checkbox
 } from '@mui/material';
 
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -222,11 +223,18 @@ export class TableStatisticsView extends React.Component<TableStatisticsViewProp
 }
 
 export const DBTableSelectionDialog: React.FC<{ 
-    buttonElement: any, 
-    sx?: SxProps
+    buttonElement?: any, 
+    sx?: SxProps,
+    onOpen?: () => void,
+    // Controlled mode props
+    open?: boolean,
+    onClose?: () => void
 }> = function DBTableSelectionDialog({ 
     buttonElement,
     sx,
+    onOpen,
+    open: controlledOpen,
+    onClose,
 }) {
     
     const theme = useTheme();
@@ -236,7 +244,14 @@ export const DBTableSelectionDialog: React.FC<{
     const tables = useSelector((state: DataFormulatorState) => state.tables);
     const serverConfig = useSelector((state: DataFormulatorState) => state.serverConfig);
 
-    const [tableDialogOpen, setTableDialogOpen] = useState<boolean>(false);
+    const [internalOpen, setInternalOpen] = useState<boolean>(false);
+    
+    // Support both controlled and uncontrolled modes
+    const isControlled = controlledOpen !== undefined;
+    const tableDialogOpen = isControlled ? controlledOpen : internalOpen;
+    const setTableDialogOpen = isControlled 
+        ? (open: boolean) => { if (!open && onClose) onClose(); }
+        : setInternalOpen;
     const [tableAnalysisMap, setTableAnalysisMap] = useState<Record<string, ColumnStatistics[] | null>>({});
     
     // maps data loader type to list of param defs
@@ -806,9 +821,14 @@ export const DBTableSelectionDialog: React.FC<{
                         onImport={() => {
                             setIsUploading(true);
                         }} 
-                        onFinish={(status, message) => {
+                        onFinish={(status, message, importedTables) => {
                             setIsUploading(false);
-                            fetchTables();
+                            fetchTables().then(() => {
+                                // Navigate to the first imported table after tables are fetched
+                                if (status === "success" && importedTables && importedTables.length > 0) {
+                                    setSelectedTabKey(importedTables[0]);
+                                }
+                            });
                             if (status === "error") {
                                 setSystemMessage(message, "error");
                             }
@@ -939,31 +959,34 @@ export const DBTableSelectionDialog: React.FC<{
 
     return (
         <>
-            <Tooltip 
-                title={serverConfig.DISABLE_DATABASE ? (
-                    <Typography sx={{ fontSize: '11px' }}>
-                        Install Data Formulator locally to use database. <br />
-                        Link: <Link 
-                            href="https://github.com/microsoft/data-formulator" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            sx={{ color: 'inherit', textDecoration: 'underline' }}
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            https://github.com/microsoft/data-formulator
-                        </Link>
-                </Typography>
-            ) : ""}
-                placement="top"
-            >
-                <span style={{cursor: serverConfig.DISABLE_DATABASE ? 'help' : 'pointer'}}>
-                    <Button variant="text"   sx={{fontSize: "inherit", gap: 1}} disabled={serverConfig.DISABLE_DATABASE} onClick={() => {
-                        setTableDialogOpen(true);
-                    }}>
-                        {buttonElement}
-                    </Button>
-                </span>
-            </Tooltip>
+            {buttonElement && (
+                <Tooltip 
+                    title={serverConfig.DISABLE_DATABASE ? (
+                        <Typography sx={{ fontSize: '11px' }}>
+                            Install Data Formulator locally to use database. <br />
+                            Link: <Link 
+                                href="https://github.com/microsoft/data-formulator" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                sx={{ color: 'inherit', textDecoration: 'underline' }}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                https://github.com/microsoft/data-formulator
+                            </Link>
+                    </Typography>
+                ) : ""}
+                    placement="top"
+                >
+                    <span style={{cursor: serverConfig.DISABLE_DATABASE ? 'help' : 'pointer'}}>
+                        <Button variant="text" sx={{fontSize: "inherit", gap: 1}} disabled={serverConfig.DISABLE_DATABASE} onClick={() => {
+                            setTableDialogOpen(true);
+                            onOpen?.();
+                        }}>
+                            {buttonElement}
+                        </Button>
+                    </span>
+                </Tooltip>
+            )}
             <Dialog
                 key="db-table-selection-dialog" 
                 onClose={() => {setTableDialogOpen(false)}} 
@@ -1013,7 +1036,7 @@ export const DataLoaderForm: React.FC<{
     paramDefs: {name: string, default: string, type: string, required: boolean, description: string}[],
     authInstructions: string,
     onImport: () => void,
-    onFinish: (status: "success" | "error", message: string) => void
+    onFinish: (status: "success" | "error", message: string, importedTables?: string[]) => void
 }> = ({dataLoaderType, paramDefs, authInstructions, onImport, onFinish}) => {
 
     const dispatch = useDispatch();
@@ -1022,11 +1045,13 @@ export const DataLoaderForm: React.FC<{
 
     const [tableMetadata, setTableMetadata] = useState<Record<string, any>>({});    let [displaySamples, setDisplaySamples] = useState<Record<string, boolean>>({});
     let [tableFilter, setTableFilter] = useState<string>("");
+    const [selectedTables, setSelectedTables] = useState<Set<string>>(new Set());
 
     const [displayAuthInstructions, setDisplayAuthInstructions] = useState(false);
 
     let [isConnecting, setIsConnecting] = useState(false);
     let [mode, setMode] = useState<"view tables" | "query">("view tables");
+
     const toggleDisplaySamples = (tableName: string) => {
         setDisplaySamples({...displaySamples, [tableName]: !displaySamples[tableName]});
     }
@@ -1068,7 +1093,12 @@ export const DataLoaderForm: React.FC<{
                     return [
                     <TableRow
                         key={tableName}
-                        sx={{ '&:last-child td, &:last-child th': { border: 0 }, '& .MuiTableCell-root': { padding: 0.25, wordWrap: 'break-word', whiteSpace: 'normal' }}}
+                        sx={{ 
+                            '&:last-child td, &:last-child th': { border: 0 }, 
+                            '& .MuiTableCell-root': { padding: 0.25, wordWrap: 'break-word', whiteSpace: 'normal' },
+                            backgroundColor: selectedTables.has(tableName) ? 'action.selected' : 'inherit',
+                            '&:hover': { backgroundColor: selectedTables.has(tableName) ? 'action.selected' : 'action.hover' }
+                        }}
                     >
                         <TableCell sx={{borderBottom: displaySamples[tableName] ? 'none' : '1px solid rgba(0, 0, 0, 0.1)'}}>
                             <IconButton size="small" onClick={() => toggleDisplaySamples(tableName)}>
@@ -1085,33 +1115,20 @@ export const DataLoaderForm: React.FC<{
                                 <Chip key={column.name} label={column.name} sx={{fontSize: 11, margin: 0.25, height: 20}} size="small" />
                             ))}
                         </TableCell>
-                        <TableCell sx={{width: 60}}>
-                            <Button size="small" onClick={() => {
-                                onImport();
-                                fetch(getUrls().DATA_LOADER_INGEST_DATA, {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                    },
-                                    body: JSON.stringify({
-                                        data_loader_type: dataLoaderType, 
-                                        data_loader_params: params, table_name: tableName
-                                    })
-                                })
-                                .then(response => response.json())
-                                .then(data => {
-                                    
-                                    if (data.status === "success") {
-                                        onFinish("success", "Data ingested successfully");
+                        <TableCell sx={{width: 40}} padding="checkbox">
+                            <Checkbox
+                                size="small"
+                                checked={selectedTables.has(tableName)}
+                                onChange={(e) => {
+                                    const newSelected = new Set(selectedTables);
+                                    if (e.target.checked) {
+                                        newSelected.add(tableName);
                                     } else {
-                                        onFinish("error", data.error);
+                                        newSelected.delete(tableName);
                                     }
-                                })
-                                .catch(error => {
-                                    console.error('Failed to ingest data:', error);
-                                    onFinish("error", `Failed to ingest data: ${error}`);
-                                });
-                            }}>Import</Button>
+                                    setSelectedTables(newSelected);
+                                }}
+                            />
                         </TableCell>
                     </TableRow>,
                     <TableRow key={`${tableName}-sample`}>
@@ -1137,6 +1154,49 @@ export const DataLoaderForm: React.FC<{
                 </TableBody>
                 </Table>
             </TableContainer>,
+        mode === "view tables" && Object.keys(tableMetadata).length > 0 && <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+            <Button 
+                variant="contained" 
+                size="small"
+                disabled={selectedTables.size === 0}
+                onClick={() => {
+                    const tablesToImport = Array.from(selectedTables);
+                    onImport();
+                    
+                    // Import all selected tables sequentially
+                    const importPromises = tablesToImport.map(tableName => 
+                        fetch(getUrls().DATA_LOADER_INGEST_DATA, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                data_loader_type: dataLoaderType, 
+                                data_loader_params: params, 
+                                table_name: tableName
+                            })
+                        }).then(response => response.json())
+                    );
+                    
+                    Promise.all(importPromises)
+                        .then(results => {
+                            const errors = results.filter(r => r.status !== "success");
+                            if (errors.length === 0) {
+                                setSelectedTables(new Set());
+                                onFinish("success", `Successfully imported ${tablesToImport.length} table(s)`, tablesToImport);
+                            } else {
+                                onFinish("error", `Failed to import some tables: ${errors.map(e => e.error).join(", ")}`);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Failed to ingest data:', error);
+                            onFinish("error", `Failed to ingest data: ${error}`);
+                        });
+                }}
+            >
+                Import Selected ({selectedTables.size})
+            </Button>
+        </Box>,
         mode === "query" && <DataQueryForm 
             dataLoaderType={dataLoaderType} 
             availableTables={Object.keys(tableMetadata).map(t => ({name: t, fields: tableMetadata[t].columns.map((c: any) => c.name)}))} 
@@ -1170,8 +1230,8 @@ export const DataLoaderForm: React.FC<{
                             required={paramDef.required}
                             key={paramDef.name}
                             label={paramDef.name}
-                            value={params[paramDef.name]}
-                            placeholder={paramDef.description}
+                            value={params[paramDef.name] ?? ''}
+                            placeholder={paramDef.default ? `e.g. ${paramDef.default}` : paramDef.description}
                             onChange={(event: any) => { 
                                 dispatch(dfActions.updateDataLoaderConnectParam({
                                     dataLoaderType, paramName: paramDef.name, 

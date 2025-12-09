@@ -1,33 +1,42 @@
-<h1>
-    <img src="./public/favicon.ico" alt="Data Formulator icon" width="28"> <b>Data Formulator: Vibe with data, in control</b>
+<h1 align="center">
+  <img src="./public/favicon.ico" alt="Data Formulator icon" width="28">&nbsp;
+  Data Formulator: AI-powered Data Visualization
 </h1>
 
-<div>
-    
-[![arxiv](https://img.shields.io/badge/Paper-arXiv:2408.16119-b31b1b.svg)](https://arxiv.org/abs/2408.16119)&ensp;
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)&ensp;
-[![YouTube](https://img.shields.io/badge/YouTube-white?logo=youtube&logoColor=%23FF0000)](https://www.youtube.com/watch?v=GfTE2FLyMrs)&ensp;
-[![build](https://github.com/microsoft/data-formulator/actions/workflows/python-build.yml/badge.svg)](https://github.com/microsoft/data-formulator/actions/workflows/python-build.yml)
-[![Discord](https://img.shields.io/badge/discord-chat-green?logo=discord)](https://discord.gg/mYCZMQKYZb)
 
-</div>
+<p align="center">
+  🪄 Explore data with visualizations, powered by AI agents.
+</p>
 
-🪄 Turn data into insights with AI Agents, with the exploration paths you choose. Try Data Formulator now!
+<p align="center">
+  <a href="https://data-formulator.ai"><img src="https://img.shields.io/badge/🚀_Try_Online_Demo-data--formulator.ai-F59E0B?style=for-the-badge" alt="Try Online Demo"></a>
+  &nbsp;
+  <a href="#get-started"><img src="https://img.shields.io/badge/💻_Install_Locally-pip_install-3776AB?style=for-the-badge" alt="Install Locally"></a>
+</p>
 
-- 🤖 New in v0.5: agent model + interative control [(video)](https://www.youtube.com/watch?v=GfTE2FLyMrs)
-- 🔥🔥🔥 Try our online demo at [https://data-formulator.ai](https://data-formulator.ai)
-- Any questions, thoughts? Discuss in the Discord channel! [![Discord](https://img.shields.io/badge/discord-chat-green?logo=discord)](https://discord.gg/mYCZMQKYZb)
+<p align="center">
+  <a href="https://arxiv.org/abs/2408.16119"><img src="https://img.shields.io/badge/Paper-arXiv:2408.16119-b31b1b.svg" alt="arXiv"></a>&ensp;
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>&ensp;
+  <a href="https://www.youtube.com/watch?v=GfTE2FLyMrs"><img src="https://img.shields.io/badge/YouTube-white?logo=youtube&logoColor=%23FF0000" alt="YouTube"></a>&ensp;
+  <a href="https://github.com/microsoft/data-formulator/actions/workflows/python-build.yml"><img src="https://github.com/microsoft/data-formulator/actions/workflows/python-build.yml/badge.svg" alt="build"></a>&ensp;
+  <a href="https://discord.gg/mYCZMQKYZb"><img src="https://img.shields.io/badge/discord-chat-green?logo=discord" alt="Discord"></a>
+</p>
 
 <!-- [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/microsoft/data-formulator?quickstart=1) -->
+<!-- 
+https://github.com/user-attachments/assets/8ca57b68-4d7a-42cb-bcce-43f8b1681ce2 -->
 
-https://github.com/user-attachments/assets/8ca57b68-4d7a-42cb-bcce-43f8b1681ce2
-
-<!-- <kbd>
-  <a target="_blank" rel="noopener noreferrer" href="https://codespaces.new/microsoft/data-formulator?quickstart=1" title="open Data Formulator in GitHub Codespaces"><img src="public/data-formulator-screenshot-v0.5.png"></a>
-</kbd> -->
+<kbd>
+  <img src="public/data-formulator-screenshot-v0.5.png">
+</kbd>
 
 
 ## News 🔥🔥🔥
+[12-08-2025] **Data Formulator 0.5.1** — Connect more, visualize more, move faster
+- 🔌 **Community data loaders**: Google BigQuery, MySQL, Postgres, MongoDB
+- 📊 **New chart types**: US Map & Pie Chart (more to be added soon)
+- ✏️ **Editable reports**: Refine generated reports with [Chartifact](https://github.com/microsoft/chartifact) in markdown style. [demo](https://github.com/microsoft/data-formulator/pull/200#issue-3635408217)
+- ⚡ **Snappier UI**: Noticeably faster interactions across the board
 
 [11-07-2025] Data Formulator 0.5: Vibe with your data, in control
 
@@ -109,9 +118,9 @@ Here are milestones that lead to the current design:
 
 ## Overview
 
-**Data Formulator** is an application from Microsoft Research that uses AI agents to make it easier to turn data into insights.
+**Data Formulator** is a Microsoft Research prototype for data exploration with visualizations powered by AI agents.
 
-Data Formulator is an AI-powered tool for analysts to iteratively explore and visualize data. Started with data in any format (screenshot, text, csv, or database), users can work with AI agents with a novel blended interface that combines *user interface interactions (UI)* and *natural language (NL) inputs* to communicate their intents, control branching exploration directions, and create reports to share their insights. 
+Data Formulator enables analysts to iteratively explore and visualize data. Started with data in any format (screenshot, text, csv, or database), users can work with AI agents with a novel blended interface that combines *user interface interactions (UI)* and *natural language (NL) inputs* to communicate their intents, control branching exploration directions, and create reports to share their insights. 
 
 ## Get Started
 
