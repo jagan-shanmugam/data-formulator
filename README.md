@@ -23,12 +23,12 @@
 </p>
 
 <!-- [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/microsoft/data-formulator?quickstart=1) -->
+<!-- 
+https://github.com/user-attachments/assets/8ca57b68-4d7a-42cb-bcce-43f8b1681ce2 -->
 
-https://github.com/user-attachments/assets/8ca57b68-4d7a-42cb-bcce-43f8b1681ce2
-
-<!-- <kbd>
-  <a target="_blank" rel="noopener noreferrer" href="https://codespaces.new/microsoft/data-formulator?quickstart=1" title="open Data Formulator in GitHub Codespaces"><img src="public/data-formulator-screenshot-v0.5.png"></a>
-</kbd> -->
+<kbd>
+  <img src="public/data-formulator-screenshot-v0.5.png">
+</kbd>
 
 
 ## News 🔥🔥🔥
