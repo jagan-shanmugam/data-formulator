@@ -12,12 +12,19 @@
 
 </div>
 
-🪄 Explore data with visualizations, powered by AI agents. Try Data Formulator now!
+<p align="center">
+  <i>🪄 Explore data with visualizations, powered by AI agents.</i>
+</p>
 
-
-<a href="https://data-formulator.ai">
-  <img src="https://img.shields.io/badge/🚀_Try_Demo-data--formulator.ai-0078d4?style=for-the-badge&logoColor=white" alt="Try Online Demo">
-</a>
+<p align="center">
+  <a href="https://data-formulator.ai">
+    <img src="https://img.shields.io/badge/🚀_Try_Online_Demo-data--formulator.ai-F59E0B?style=for-the-badge" alt="Try Online Demo">
+  </a>
+  &nbsp;&nbsp;
+  <a href="#get-started">
+    <img src="https://img.shields.io/badge/💻_Install_Locally-pip_install-3776AB?style=for-the-badge" alt="Install Locally">
+  </a>
+</p>
 
 <!-- [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/microsoft/data-formulator?quickstart=1) -->
 
