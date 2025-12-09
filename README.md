@@ -1,22 +1,17 @@
 <h1 align="center">
   <img src="./public/favicon.ico" alt="Data Formulator icon" width="28">&nbsp;
-  Data Formulator: Vibe with data, in control
+  Data Formulator: AI-powered Data Visualization
 </h1>
 
 
-
 <p align="center">
-  <i>🪄 Explore data with visualizations, powered by AI agents.</i>
+  🪄 Explore data with visualizations, powered by AI agents.
 </p>
 
 <p align="center">
-  <a href="https://data-formulator.ai">
-    <img src="https://img.shields.io/badge/🚀_Try_Online_Demo-data--formulator.ai-F59E0B?style=for-the-badge" alt="Try Online Demo">
-  </a>
-  &nbsp;&nbsp;
-  <a href="#get-started">
-    <img src="https://img.shields.io/badge/💻_Install_Locally-pip_install-3776AB?style=for-the-badge" alt="Install Locally">
-  </a>
+  <a href="https://data-formulator.ai"><img src="https://img.shields.io/badge/🚀_Try_Online_Demo-data--formulator.ai-F59E0B?style=for-the-badge" alt="Try Online Demo"></a>
+  &nbsp;
+  <a href="#get-started"><img src="https://img.shields.io/badge/💻_Install_Locally-pip_install-3776AB?style=for-the-badge" alt="Install Locally"></a>
 </p>
 
 <p align="center">
